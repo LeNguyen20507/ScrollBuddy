@@ -175,23 +175,33 @@ app.post('/api/create-event', async (req, res) => {
 
     console.log('📅 Extracting event from:', message?.substring(0, 50) + '...');
 
-    const systemPrompt = `You are an assistant that extracts calendar event details from text.
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const systemPrompt = `You are an assistant that extracts calendar event details from text. Be LENIENT and HELPFUL - extract what you can and use smart defaults for missing info.
 
 Your response MUST be valid JSON with this exact structure:
 {
-  "title": "Event title",
-  "date": "YYYY-MM-DD format",
-  "time": "HH:MM format (24-hour) or null if not specified",
-  "location": "Location or null if not specified",
+  "title": "Event title (required - infer from context)",
+  "date": "YYYY-MM-DD format (required - use tomorrow if not specified)",
+  "time": "HH:MM format 24-hour (use 09:00 if not specified)",
+  "location": "Location or empty string",
   "description": "Brief description"
 }
 
-If you cannot extract a valid event, respond with:
-{
-  "error": "Reason why event cannot be extracted"
-}
+CRITICAL RULES:
+- TODAY IS ${today.toISOString().split('T')[0]} (YEAR IS 2025)
+- ALWAYS use year 2025 or later for dates
+- If no specific date: use tomorrow (${tomorrow.toISOString().split('T')[0]})
+- If no specific time: use 09:00
+- If no location: use empty string
+- NEVER ask for more information - just make reasonable assumptions
+- "tomorrow" = ${tomorrow.toISOString().split('T')[0]}
+- "next week" = add 7 days from today
+- "Monday" = next Monday from ${today.toISOString().split('T')[0]}
 
-Today's date is ${new Date().toISOString().split('T')[0]} for reference.`;
+Only return error if there's absolutely no event-like content at all.`;
 
     const userPrompt = `Extract calendar event details from this:
 
@@ -252,15 +262,54 @@ app.post('/api/add-to-calendar', async (req, res) => {
     }
 
     console.log('📆 Sending to Google Calendar:', event.title);
+    console.log('📆 Event data received:', JSON.stringify(event));
 
-    // Send to n8n webhook
-    const response = await axios.post(webhookUrl, {
-      title: event.title,
-      date: event.date,
-      time: event.time || '09:00',
-      location: event.location || '',
-      description: event.description || ''
-    });
+    // Parse date and time properly
+    let startDateTime;
+    const timeStr = event.time || '09:00';
+    
+    // Handle various date formats
+    if (event.date) {
+      // Ensure proper ISO format: YYYY-MM-DDTHH:MM:SS
+      const dateStr = event.date.includes('T') ? event.date.split('T')[0] : event.date;
+      startDateTime = new Date(`${dateStr}T${timeStr}:00`);
+    } else {
+      // Default to tomorrow at specified time
+      startDateTime = new Date();
+      startDateTime.setDate(startDateTime.getDate() + 1);
+      const [hours, minutes] = timeStr.split(':');
+      startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    }
+    
+    // Validate the date
+    if (isNaN(startDateTime.getTime())) {
+      console.error('❌ Invalid date:', event.date, event.time);
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+    
+    const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+    console.log('📆 Parsed start:', startDateTime.toISOString());
+    console.log('📆 Parsed end:', endDateTime.toISOString());
+
+    // Send to n8n webhook in exact Google Calendar API format
+    const payload = {
+      summary: event.title,
+      description: `${event.description || ''}${event.location ? '\n\nLocation: ' + event.location : ''}`,
+      start: {
+        dateTime: startDateTime.toISOString(),
+        timeZone: 'America/Los_Angeles'
+      },
+      end: {
+        dateTime: endDateTime.toISOString(),
+        timeZone: 'America/Los_Angeles'
+      },
+      location: event.location || ''
+    };
+    
+    console.log('📆 Sending payload:', JSON.stringify(payload, null, 2));
+    
+    const response = await axios.post(webhookUrl, payload);
 
     console.log('✅ Calendar event created');
     res.json({ 
@@ -283,16 +332,35 @@ app.post('/api/add-to-calendar', async (req, res) => {
 // =====================
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, selectedText, context } = req.body;
+    const { message, selectedText, context, focusMode } = req.body;
 
-    const systemPrompt = `You are ScrollBuddy, a helpful browser assistant. You help users:
-1. Fact-check claims they find online
-2. Add events to their calendar
-3. Answer questions about web content
+    let systemPrompt;
+    
+    if (focusMode && context) {
+      // Focus mode - answer based on article content
+      systemPrompt = `You are ScrollBuddy, a helpful browser assistant. You are currently in FOCUS MODE, reading a specific webpage/article.
 
-Be concise and helpful. If the user wants to fact-check something, ask them to select text on the page first.`;
+IMPORTANT RULES:
+1. The user is asking about the article content provided in the context
+2. ALWAYS look through the article content to find answers to the user's questions
+3. If the answer IS in the article, provide it directly with relevant quotes or details
+4. If the answer is NOT in the article, say "I couldn't find that information in this article" and then briefly answer from your general knowledge if possible
+5. Be concise and helpful
+6. If the user wants to add a calendar event, extract the details and respond with a JSON object like: {"createEvent": true, "title": "...", "date": "YYYY-MM-DD", "time": "HH:MM"}
 
-    const userPrompt = `${message}${selectedText ? `\n\nSelected text: "${selectedText}"` : ''}${context ? `\n\nPage context: ${context}` : ''}`;
+ARTICLE CONTENT:
+${context}`;
+    } else {
+      // Regular mode
+      systemPrompt = `You are ScrollBuddy, a helpful browser assistant. You help users:
+1. Answer general questions
+2. Add events to their calendar - if user mentions an event/date, respond with JSON: {"createEvent": true, "title": "...", "date": "YYYY-MM-DD", "time": "HH:MM" (default 09:00)}
+3. Fact-check claims (ask them to use the 📋 button)
+
+Today is ${new Date().toISOString().split('T')[0]}. Be concise and helpful. Don't ask for more details about events - use smart defaults (9AM if no time specified, tomorrow if no date).`;
+    }
+
+    const userPrompt = `${message}${selectedText ? `\n\nSelected text: "${selectedText}"` : ''}`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -300,10 +368,35 @@ Be concise and helpful. If the user wants to fact-check something, ask them to s
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      max_tokens: 512
+      max_tokens: 1024
     });
 
-    res.json({ reply: completion.choices[0].message.content });
+    const reply = completion.choices[0].message.content;
+    
+    // Check if response contains event creation request
+    try {
+      if (reply.includes('"createEvent"')) {
+        const jsonMatch = reply.match(/\{[^{}]*"createEvent"[^{}]*\}/s);
+        if (jsonMatch) {
+          const eventData = JSON.parse(jsonMatch[0]);
+          if (eventData.createEvent) {
+            return res.json({ 
+              reply: `I'll add that to your calendar!`,
+              event: {
+                title: eventData.title,
+                date: eventData.date,
+                time: eventData.time || '09:00',
+                description: eventData.description || ''
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Not a JSON response, continue normally
+    }
+
+    res.json({ reply });
 
   } catch (error) {
     console.error('❌ Chat error:', error);
@@ -338,8 +431,8 @@ process.on('SIGINT', async () => {
 app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════╗
-║   🔍 ScrollBuddy Server Running        ║
-║   http://localhost:${PORT}                 ║
+║    ScrollBuddy Server Running          ║
+║   http://localhost:${PORT}             ║
 ╠════════════════════════════════════════╣
 ║   Endpoints:                           ║
 ║   • POST /api/fact-check               ║

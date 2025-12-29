@@ -2,6 +2,88 @@
   "factChecks": [
     {
       "verdict": "TRUE",
+      "explanation": "The claim about the completion of the cycling lanes on both sides of Mai Chi Tho Boulevard is accurate. Multiple reliable sources, including VnExpress International, confirm that the lanes were largely finished on December 28, featuring new asphalt and red paint. The statements from Doan Van Tan regarding the purpose of the bike lane also align with the reports from these sources.",
+      "confidence": 95,
+      "reasoning": "The details provided in the original claim are corroborated by the information from multiple sources. VnExpress International, along with other sources like VietnamNet and Tuoi Tre, all confirm the completion status and features of the cycling lane, as well as the plans to enhance urban safety and infrastructure for cyclists.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "VnExpress International",
+          "supports": true,
+          "relevance": "Details on the completion date and features of cycling lanes directly reflect the claim."
+        },
+        {
+          "sourceName": "VietnamNet",
+          "supports": true,
+          "relevance": "Affirms the status of the cycling lane construction and its purpose in promoting urban cycling."
+        },
+        {
+          "sourceName": "Tuoi Tre",
+          "supports": true,
+          "relevance": "Confirms that the bicycle lanes are part of an initiative for greener urban mobility."
+        }
+      ],
+      "sources": [
+        {
+          "title": "A new path for cyclists takes shape in Ho Chi Minh City",
+          "url": "https://vietnamnet.vn/en/a-new-path-for-cyclists-takes-shape-in-ho-chi-minh-city-2476713.html",
+          "description": "After more than two months of construction, Ho Chi Minh City’s first dedicated bicycle lane on Mai Chi Tho Boulevard is nearly complete, signaling a greener, safer shift in urban mobility.",
+          "siteName": "vietnamnet.vn"
+        },
+        {
+          "title": "Panoramic view of the first road in Ho Chi Minh City to be renovated and have separate lanes for bicycles",
+          "url": "https://www.vietnam.vn/en/toan-canh-tuyen-duong-dau-tien-o-tp-hcm-duoc-cai-tao-mo-lan-rieng-cho-xe-dap",
+          "description": "Ho Chi Minh City will renovate the corridor on both sides of Mai Chi Tho Street into a nearly 6 km long bicycle lane with a speed of 20 km/h, creating a green, friendly space for people.",
+          "siteName": "vietnam.vn"
+        },
+        {
+          "title": "First bicycle lanes take shape in Ho Chi Minh City",
+          "url": "https://news.tuoitre.vn/first-bicycle-lanes-take-shape-in-ho-chi-minh-city-103251223113048217.htm",
+          "description": "After more than two months of construction, Ho Chi Minh City’s first dedicated bicycle lanes along Mai Chi Tho Boulevard in An Khanh Ward are gradually taking shape, marking a milestone in the city’s push toward greener and safer urban transport.",
+          "siteName": "news.tuoitre.vn"
+        }
+      ],
+      "claim": "The cycling lanes on both sides of Mai Chi Tho Boulevard were largely finished on Dec. 28, newly paved with asphalt and marked with red paint.\n\nDoan Van Tan, director of the Urban Traffic Management and Operation Center, said Mai Chi Tho Boulevard was selected as it met the necessary conditions for implementation. The bicycle lane both adds new infrastructure and improves safety, meeting the growing demand for cycling in urban areas.",
+      "id": 1767035525116,
+      "timestamp": "2025-12-29T19:12:05.116Z"
+    },
+    {
+      "verdict": "PARTIALLY TRUE",
+      "explanation": "The claim about the user 'igetproteinfartsHELP' being a 'Top 1% Poster' is accurate based on the Reddit context provided. However, the broader claim doesn't provide details that can be fully verified regarding the content of the post itself or its significance. While the user is actively posting in r/news, the content of the posts or their impact is not specified.",
+      "confidence": 85,
+      "reasoning": "The context from Reddit shows that 'igetproteinfartsHELP' is indeed a user with a notable posting history, characterized as a 'Top 1% Poster'. However, confirming their overall impact or relevance requires deeper insight into their contributions and the metrics used to calculate the 'Top 1%' classification on Reddit, which is not provided in the sources analyzed.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "reddit.com",
+          "supports": true,
+          "relevance": "The main source is directly from the Reddit platform, confirming user activity and participation level."
+        }
+      ],
+      "sources": [
+        {
+          "title": "r/news on Reddit: British boxer Anthony Joshua injured in car crash that killed two in Nigeria",
+          "url": "https://www.reddit.com/r/news/comments/1pyq53r/british_boxer_anthony_joshua_injured_in_car_crash/",
+          "description": "igetproteinfartsHELP · • 58m ago · Top 1% Poster · It said the car appeared to have &quot;lost control during an overtaking manoeuvre&quot; and crashed into the stationary truck by the side of the road.",
+          "siteName": "reddit.com"
+        },
+        {
+          "title": "r/news on Reddit: Police are investigating link between Brown shooting and killing of MIT professor, AP sources say",
+          "url": "https://www.reddit.com/r/news/comments/1pq1gj7/police_are_investigating_link_between_brown/",
+          "description": "Posted by u/igetproteinfartsHELP - 961 votes and 96 comments",
+          "siteName": "reddit.com"
+        },
+        {
+          "title": "r/news on Reddit: 4 charged with plotting New Year's Eve attacks in Southern California, prosecutors say",
+          "url": "https://www.reddit.com/r/news/comments/1pnbcoy/4_charged_with_plotting_new_years_eve_attacks_in/",
+          "description": "LowIQ45 • 2h ago · Can&#x27;t wait to see the bombs &quot;etched&quot; with Anti-ICE in marker · igetproteinfartsHELP • 2h ago · It&#x27;s suprising that ever since a podcaster became the FBI head, suddenly all bullets are being engraved... Continue this thread · Glittering_Cow9208 • 1h ago ·",
+          "siteName": "reddit.com"
+        }
+      ],
+      "claim": "Go to news\nr/news\n•\n2h ago\nigetproteinfartsHELP\n Top 1% Poster",
+      "id": 1767034080258,
+      "timestamp": "2025-12-29T18:48:00.258Z"
+    },
+    {
+      "verdict": "TRUE",
       "explanation": "Multiple reliable sources confirm that Waymo is recalling its software after its self-driving cars failed to stop for stopped school buses. According to NPR, Advanced Manufacturing, and Axios, the decision was made in response to safety concerns and reports of illegal activity.",
       "confidence": 95,
       "reasoning": "The claim is supported by several reputable sources, including NPR, Advanced Manufacturing, and Axios. All these sources report that Waymo is indeed recalling software due to incidents where its cars passed stopped school buses, alignment among them strengthens the credibility of the claim.",

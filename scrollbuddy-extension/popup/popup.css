@@ -423,6 +423,10 @@ body {
   border-color: #667eea;
 }
 
+.action-btn.calendar-btn:hover {
+  border-color: #4CAF50;
+}
+
 .action-btn span {
   font-size: 16px;
 }

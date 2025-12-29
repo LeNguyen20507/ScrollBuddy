@@ -15,6 +15,7 @@ const focusBanner = document.getElementById('focus-banner');
 const focusTitle = document.getElementById('focus-title');
 const focusClose = document.getElementById('focus-close');
 const clearHistoryBtn = document.getElementById('clear-history');
+const addEventBtn = document.getElementById('add-event-btn');
 
 // State
 let selectedText = '';
@@ -23,24 +24,69 @@ let focusMode = false;
 let focusedPageContent = '';
 let focusedPageTitle = '';
 let focusedPageUrl = '';
+let currentTabId = null;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Get current tab ID for per-tab storage
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  currentTabId = tab.id;
+  
   loadHistory();
   setupEventListeners();
   autoResizeTextarea();
   restoreFocusMode();
+  restoreTabChat();
 });
 
-// Restore focus mode state from storage
-async function restoreFocusMode() {
-  const result = await chrome.storage.local.get(['focusMode', 'focusedPageContent', 'focusedPageTitle', 'focusedPageUrl']);
+// Restore per-tab chat history from session storage
+async function restoreTabChat() {
+  if (!currentTabId) return;
   
-  if (result.focusMode) {
+  const key = `chat_${currentTabId}`;
+  const result = await chrome.storage.session.get([key]);
+  
+  if (result[key] && result[key].messages) {
+    // Clear default welcome message
+    messagesContainer.innerHTML = '';
+    
+    // Restore saved messages
+    result[key].messages.forEach(msg => {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${msg.type}`;
+      messageDiv.innerHTML = msg.html;
+      messagesContainer.appendChild(messageDiv);
+    });
+    
+    scrollToBottom();
+  }
+}
+
+// Save current chat to session storage (per-tab)
+async function saveTabChat() {
+  if (!currentTabId) return;
+  
+  const key = `chat_${currentTabId}`;
+  const messages = Array.from(messagesContainer.querySelectorAll('.message')).map(msg => ({
+    type: msg.classList.contains('user') ? 'user' : 'assistant',
+    html: msg.innerHTML
+  }));
+  
+  await chrome.storage.session.set({ [key]: { messages } });
+}
+
+// Restore focus mode state from per-tab session storage
+async function restoreFocusMode() {
+  if (!currentTabId) return;
+  
+  const key = `focus_${currentTabId}`;
+  const result = await chrome.storage.session.get([key]);
+  
+  if (result[key] && result[key].focusMode) {
     focusMode = true;
-    focusedPageContent = result.focusedPageContent || '';
-    focusedPageTitle = result.focusedPageTitle || '';
-    focusedPageUrl = result.focusedPageUrl || '';
+    focusedPageContent = result[key].focusedPageContent || '';
+    focusedPageTitle = result[key].focusedPageTitle || '';
+    focusedPageUrl = result[key].focusedPageUrl || '';
     
     // Restore UI state
     focusBtn.classList.add('active');
@@ -66,6 +112,9 @@ function setupEventListeners() {
   // Focus mode
   focusBtn.addEventListener('click', toggleFocusMode);
   focusClose.addEventListener('click', exitFocusMode);
+
+  // Calendar event
+  addEventBtn.addEventListener('click', extractEventFromPage);
 
   // Clear history
   clearHistoryBtn.addEventListener('click', clearHistory);
@@ -214,12 +263,15 @@ async function toggleFocusMode() {
         focusedPageTitle = title;
         focusedPageUrl = url;
         
-        // Save to storage for persistence
-        await chrome.storage.local.set({
-          focusMode: true,
-          focusedPageContent: content,
-          focusedPageTitle: title,
-          focusedPageUrl: url
+        // Save to per-tab session storage for persistence
+        const key = `focus_${currentTabId}`;
+        await chrome.storage.session.set({
+          [key]: {
+            focusMode: true,
+            focusedPageContent: content,
+            focusedPageTitle: title,
+            focusedPageUrl: url
+          }
         });
         
         // Update UI
@@ -240,14 +292,47 @@ async function toggleFocusMode() {
   }
 }
 
+// Prompt user to add calendar event
+async function extractEventFromPage() {
+  // Prompt user for event details
+  const eventText = prompt('📅 What event would you like to add?\n\nExample: "Meeting tomorrow at 2pm" or "Flight to LA on Jan 5"');
+  
+  if (!eventText || !eventText.trim()) {
+    return; // User cancelled
+  }
+  
+  addMessage(`📅 Adding: "${eventText}"`, 'user');
+  
+  const typingId = showTyping();
+  
+  try {
+    const response = await createEvent(eventText, '');
+    removeTyping(typingId);
+    
+    if (response.event) {
+      addEventPreview(response.event);
+    } else if (response.error) {
+      addMessage(`⚠️ ${response.error}`, 'assistant');
+    } else {
+      addMessage('⚠️ Could not understand the event. Try something like "Meeting tomorrow at 3pm"', 'assistant');
+    }
+  } catch (error) {
+    removeTyping(typingId);
+    addMessage('❌ Failed to create event. Please try again.', 'assistant');
+  }
+}
+
 async function exitFocusMode() {
   focusMode = false;
   focusedPageContent = '';
   focusedPageTitle = '';
   focusedPageUrl = '';
   
-  // Clear from storage
-  await chrome.storage.local.remove(['focusMode', 'focusedPageContent', 'focusedPageTitle', 'focusedPageUrl']);
+  // Clear from per-tab session storage
+  if (currentTabId) {
+    const key = `focus_${currentTabId}`;
+    await chrome.storage.session.remove([key]);
+  }
   
   focusBtn.classList.remove('active');
   focusBanner.style.display = 'none';
@@ -287,25 +372,19 @@ async function handleSend() {
       contextToSend = `Page: ${focusedPageTitle}\nURL: ${focusedPageUrl}\n\nFull Page Content:\n${focusedPageContent}`;
     }
 
-    // Determine intent (fact-check or calendar)
+    // Determine intent (fact-check only if explicitly asking with selected text)
     const isFactCheck = (message.toLowerCase().includes('fact') || 
                         message.toLowerCase().includes('check') ||
-                        message.toLowerCase().includes('verify') ||
-                        message.toLowerCase().includes('true')) &&
+                        message.toLowerCase().includes('verify')) &&
                         selectedText;
-    
-    const isCalendar = message.toLowerCase().includes('calendar') ||
-                       message.toLowerCase().includes('event') ||
-                       message.toLowerCase().includes('schedule');
 
     let response;
     
     if (isFactCheck && selectedText) {
       response = await factCheck(selectedText, contextToSend, message);
-    } else if (isCalendar) {
-      response = await createEvent(message, contextToSend);
     } else {
-      response = await chat(message, selectedText, contextToSend);
+      // Use chat for everything else - it handles calendar events internally
+      response = await chat(message, selectedText, contextToSend, focusMode);
     }
 
     removeTyping(typingId);
@@ -337,11 +416,11 @@ async function createEvent(message, context) {
   return response.json();
 }
 
-async function chat(message, selectedText, context) {
+async function chat(message, selectedText, context, isFocusMode) {
   const response = await fetch(`${API_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, selectedText, context })
+    body: JSON.stringify({ message, selectedText, context, focusMode: isFocusMode })
   });
   return response.json();
 }
@@ -359,7 +438,10 @@ function handleResponse(response, isFactCheck) {
     saveToHistory(response);
     clearSelection();
   } else if (response.event) {
-    // Calendar event response
+    // Calendar event response - show message first if present
+    if (response.reply) {
+      addMessage(response.reply, 'assistant');
+    }
     addEventPreview(response.event);
   } else {
     // Regular chat response
@@ -374,6 +456,7 @@ function addMessage(content, type) {
   messageDiv.innerHTML = `<div class="message-content"><p>${escapeHtml(content)}</p></div>`;
   messagesContainer.appendChild(messageDiv);
   scrollToBottom();
+  saveTabChat(); // Save per-tab chat
 }
 
 // Add fact-check result
@@ -433,37 +516,23 @@ function addFactCheckResult(result) {
   `;
   messagesContainer.appendChild(messageDiv);
   scrollToBottom();
+  saveTabChat(); // Save per-tab chat
 }
 
-// Add event preview
-function addEventPreview(event) {
-  const messageDiv = document.createElement('div');
-  messageDiv.className = 'message assistant';
-  messageDiv.innerHTML = `
-    <div class="message-content">
-      <p>I found an event! Would you like to add it to your calendar?</p>
-      <div class="event-preview">
-        <div class="event-field">
-          <span class="event-field-icon">📅</span>
-          <span class="event-field-value">${escapeHtml(event.title)}</span>
-        </div>
-        <div class="event-field">
-          <span class="event-field-icon">🕐</span>
-          <span class="event-field-value">${escapeHtml(event.date)} ${event.time ? 'at ' + event.time : ''}</span>
-        </div>
-        ${event.location ? `
-        <div class="event-field">
-          <span class="event-field-icon">📍</span>
-          <span class="event-field-value">${escapeHtml(event.location)}</span>
-        </div>` : ''}
-        <button class="add-calendar-btn" onclick="addToCalendar(${JSON.stringify(event).replace(/"/g, '&quot;')})">
-          Add to Google Calendar
-        </button>
-      </div>
-    </div>
-  `;
-  messagesContainer.appendChild(messageDiv);
-  scrollToBottom();
+// Add event preview and auto-confirm
+async function addEventPreview(event) {
+  // Show the event details
+  const eventDetails = `📅 ${event.title}\n🕐 ${event.date}${event.time ? ' at ' + event.time : ''}${event.location ? '\n📍 ' + event.location : ''}`;
+  
+  // Ask for confirmation
+  const confirmed = confirm(`Add this event to Google Calendar?\n\n${eventDetails}`);
+  
+  if (confirmed) {
+    addMessage(`📅 Adding "${event.title}" to calendar...`, 'user');
+    await addToCalendar(event);
+  } else {
+    addMessage(`📅 Event not added: ${event.title}`, 'assistant');
+  }
 }
 
 // Add to calendar
@@ -471,6 +540,7 @@ async function addToCalendar(event) {
   showToast('Adding to calendar...', 'success');
   
   try {
+    console.log('Sending to calendar:', event);
     const response = await fetch(`${API_URL}/api/add-to-calendar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -478,16 +548,18 @@ async function addToCalendar(event) {
     });
     
     const result = await response.json();
+    console.log('Calendar response:', result);
     
     if (result.success) {
       addMessage('✅ Event added to your Google Calendar!', 'assistant');
       showToast('Event created!', 'success');
     } else {
-      addMessage('Failed to add event: ' + result.error, 'assistant');
+      addMessage('❌ Failed to add event: ' + (result.error || 'Unknown error'), 'assistant');
       showToast('Failed to add event', 'error');
     }
   } catch (error) {
     console.error('Error adding to calendar:', error);
+    addMessage('❌ Failed to connect to calendar service', 'assistant');
     showToast('Failed to add event', 'error');
   }
 }
