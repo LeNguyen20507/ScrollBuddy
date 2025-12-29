@@ -55,22 +55,45 @@ app.post('/api/fact-check', async (req, res) => {
 
     console.log('📋 Fact-checking claim:', claim.substring(0, 100) + '...');
 
+    // Extract current page URL from context to exclude it from sources
+    let currentPageUrl = null;
+    if (context) {
+      const urlMatch = context.match(/URL:\s*(.+)/);
+      if (urlMatch) {
+        try {
+          const url = new URL(urlMatch[1]);
+          currentPageUrl = url.hostname.replace('www.', '');
+          console.log('📍 Current page:', currentPageUrl);
+        } catch (e) {
+          console.log('⚠️ Could not parse current page URL');
+        }
+      }
+    }
+
     // Step 1: Search for relevant sources using MCP Brave Search
     let searchResults = [];
     try {
       const searchQuery = claim.length > 100 ? claim.substring(0, 100) : claim;
-      searchResults = await mcpHandler.webSearch(searchQuery, 5);
+      searchResults = await mcpHandler.webSearch(searchQuery, 8); // Get more results to filter
       console.log('🔍 Found sources:', searchResults?.web?.results?.length || 0);
     } catch (error) {
       console.error('Search failed, continuing without sources:', error.message);
     }
 
-    // Format search results for GPT
+    // Format search results for GPT and filter out current page
     let sourcesContext = '';
     let sources = [];
     
     if (searchResults?.web?.results) {
-      sources = searchResults.web.results.map(r => ({
+      // Filter out the current page from sources
+      const filteredResults = searchResults.web.results.filter(r => {
+        const sourceHostname = new URL(r.url).hostname.replace('www.', '');
+        return sourceHostname !== currentPageUrl;
+      });
+      
+      console.log('✅ Sources after filtering:', filteredResults.length);
+      
+      sources = filteredResults.slice(0, 5).map(r => ({
         title: r.title,
         url: r.url,
         description: r.description,

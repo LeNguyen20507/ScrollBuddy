@@ -2,6 +2,123 @@
   "factChecks": [
     {
       "verdict": "TRUE",
+      "explanation": "Multiple reliable sources confirm that FBI Director Kash Patel announced the bureau is ramping up its use of artificial intelligence to address both domestic and global threats. Specifically, sources from Blockchain News and WFIN corroborate Patel's statement about the FBI's enhanced AI initiatives.",
+      "confidence": 95,
+      "reasoning": "The claim is supported by sources like Blockchain News and WFIN, which both report Patel's assertion about expanding AI usage within the FBI for security purposes. Other sources may provide critical perspectives on Patel's management but do not contradict this specific claim about AI.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "Fox News",
+          "supports": true,
+          "relevance": "Directly reports Patel's statement regarding the ramping up of AI use in the FBI."
+        },
+        {
+          "sourceName": "Blockchain News",
+          "supports": true,
+          "relevance": "Confirms the statement that Patel announced increased AI usage to combat threats."
+        },
+        {
+          "sourceName": "WFIN",
+          "supports": true,
+          "relevance": "Also reports on Patel's announcement about the FBI's focus on AI as a response to threats."
+        },
+        {
+          "sourceName": "New Republic",
+          "supports": false,
+          "relevance": "Discusses internal issues in the FBI but does not contradict Patel's statement about AI."
+        },
+        {
+          "sourceName": "Daily Kos",
+          "supports": false,
+          "relevance": "Provides a critical view of Patel's leadership but does not address the AI claim."
+        },
+        {
+          "sourceName": "Dnyuz",
+          "supports": true,
+          "relevance": "Reiterates Patel's statements about using AI as a key component in counterterrorism efforts."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Kash Patel Meltdown Over FBI Jacket Derailed Major Investigation | The New Republic",
+          "url": "https://newrepublic.com/post/203780/kash-patel-meltdown-fbi-jacket-derailed-major-investigation",
+          "description": "That’s at least in part because the DOJ has been paying FBI agents nearly $1 million in overtime to work on the “Epstein Transparency Project” at a bureau facility in Winchester, Virginia. FBI Director Kash Patel has tasked nearly 1,000 agents on the project, which, according to internal reports, has also been referred to as the “Special Redaction Project.”",
+          "siteName": "newrepublic.com"
+        },
+        {
+          "title": "FBI is a 'circus' under Kash Patel, says damning report",
+          "url": "https://www.dailykos.com/stories/2025/12/1/2356268/-Look-how-Kash-Patel-is-trashing-the-FBI",
+          "description": "A 115-page report compiled from interviews with dozens of current and former FBI agents found that FBI Director Kash Patel and Deputy Director Dan Bongino have turned the agency into a ‘circus,’ with agents describing the two men as clowns more...",
+          "siteName": "dailykos.com"
+        },
+        {
+          "title": "FBI Director Kash Patel Confirms Increased Use of AI to Combat Domestic and Global Threats | AI News Detail",
+          "url": "https://blockchain.news/ainews/fbi-director-kash-patel-confirms-increased-use-of-ai-to-combat-domestic-and-global-threats",
+          "description": "According to FoxNewsAI, FBI Director Kash Patel announced that the bureau is expanding its use of artificial intelligence to address both domestic and international security threats. The FBI is dep",
+          "siteName": "blockchain.news"
+        }
+      ],
+      "claim": "FBI Director Kash Patel says bureau ramping up AI to counter domestic, global threats",
+      "id": 1767044586298,
+      "timestamp": "2025-12-29T21:43:06.298Z"
+    },
+    {
+      "verdict": "TRUE",
+      "explanation": "The claim that Long Beach has recorded one of the deadliest years for drivers and pedestrians is confirmed by multiple sources. According to NBC Los Angeles and Telemundo 52, 2025 has seen 53 fatal crashes, which is indicated to be one of the deadliest years on record for the city.",
+      "confidence": 95,
+      "reasoning": "The claim is corroborated by various reliable sources. NBC Los Angeles states that 2025 has marked a significant increase in fatal crashes, indicating it as one of the deadliest. Telemundo 52 and other reports, including LAist and KFI AM 640, reflect similar findings, noting an increase in fatalities compared to previous years. The consistency across these sources reinforces the validity of the claim.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "nbclosangeles.com",
+          "supports": true,
+          "relevance": "This article directly reports on the number of fatal crashes in Long Beach for 2025, supporting the claim."
+        },
+        {
+          "sourceName": "telemundo52.com",
+          "supports": true,
+          "relevance": "Similar to NBC, it confirms that 2025 is one of the deadliest years for traffic incidents in Long Beach."
+        },
+        {
+          "sourceName": "laist.com",
+          "supports": true,
+          "relevance": "It notes the fatalities have outpaced other crime statistics and indicates a record of deadly years."
+        },
+        {
+          "sourceName": "kfiam640.iheart.com",
+          "supports": true,
+          "relevance": "Reports on the increasing number of pedestrian deaths, supporting the claim of increased mortality rates."
+        },
+        {
+          "sourceName": "lbwatchdog.com",
+          "supports": true,
+          "relevance": "Specifically states that 2025 is the deadliest year since at least 1990 in terms of traffic fatalities."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Long Beach records one of the deadliest years for drivers and pedestrians",
+          "url": "https://www.nbclosangeles.com/news/local/long-beach-deadly-crashes-2025/3821908/",
+          "description": "Macy Jenkins reports for the NBC4 News at 11 p.m. on Dec. 28, 2025. A fatal crash Saturday night has marked 2025 as one of the deadliest years on record for drivers and pedestrians in Long Beach.",
+          "siteName": "nbclosangeles.com"
+        },
+        {
+          "title": "Long Beach registra uno de los años más mortales para conductores y peatones – Telemundo 52",
+          "url": "https://www.telemundo52.com/noticias/local/long-beach-registra-uno-de-los-anos-mas-mortales-para-conductores-y-peatones/2826212/",
+          "description": "A fatal crash Saturday night has marked 2025 as one of the deadliest years on record for drivers and pedestrians in Long Beach. A woman was hit and killed by a vehicle around 8:45 p.m. on West PCH and Cedar Avenue.",
+          "siteName": "telemundo52.com"
+        },
+        {
+          "title": "Long Beach speed cameras",
+          "url": "https://laist.com/brief/news/speed-cameras-to-start-issuing-tickets-in-long-beach-by-fall-2026",
+          "description": "Long Beach’s 55 traffic fatal collisions this year have outpaced homicides and exceeded last year’s total of 36 killed in crashes. Erin Hoops, with the pro-street-safety group Carlite Long Beach, said this has been “the deadliest year ...",
+          "siteName": "laist.com"
+        }
+      ],
+      "claim": "Long Beach records one of the deadliest years for drivers and pedestrians",
+      "id": 1767044356870,
+      "timestamp": "2025-12-29T21:39:16.870Z"
+    },
+    {
+      "verdict": "TRUE",
       "explanation": "The claim about the completion of the cycling lanes on both sides of Mai Chi Tho Boulevard is accurate. Multiple reliable sources, including VnExpress International, confirm that the lanes were largely finished on December 28, featuring new asphalt and red paint. The statements from Doan Van Tan regarding the purpose of the bike lane also align with the reports from these sources.",
       "confidence": 95,
       "reasoning": "The details provided in the original claim are corroborated by the information from multiple sources. VnExpress International, along with other sources like VietnamNet and Tuoi Tre, all confirm the completion status and features of the cycling lane, as well as the plans to enhance urban safety and infrastructure for cyclists.",

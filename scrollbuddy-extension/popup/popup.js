@@ -182,10 +182,7 @@ async function getSelectedText() {
         selectedText = selection;
         pageContext = `Page: ${title}\nURL: ${url}\nContent: ${pageContent}`;
         
-        // Show what we're checking
-        addMessage(`Fact-checking: "${selection.length > 100 ? selection.substring(0, 100) + '...' : selection}"`, 'user');
-        
-        // Auto-trigger fact-check
+        // Auto-trigger fact-check with typing indicator
         const typingId = showTyping();
         
         try {
