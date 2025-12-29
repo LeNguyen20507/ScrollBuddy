@@ -1,1 +1,80 @@
-<!-- ScrollBuddy Popup UI -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScrollBuddy</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">🔍</span>
+        <h1>ScrollBuddy</h1>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="chat">Chat</button>
+      <button class="tab" data-tab="history">History</button>
+    </nav>
+
+    <!-- Chat Tab -->
+    <main class="tab-content active" id="chat-tab">
+      <!-- Messages Container -->
+      <div class="messages" id="messages">
+        <div class="message assistant">
+          <div class="message-content">
+            <p>Hi! I'm ScrollBuddy 👋</p>
+            <p>I can help you:</p>
+            <ul>
+              <li><strong>Fact-check</strong> - Select text on the page and ask me to verify it</li>
+              <li><strong>Add to calendar</strong> - Tell me about an event to add</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Text Preview -->
+      <div class="selected-text-preview" id="selected-preview" style="display: none;">
+        <div class="preview-header">
+          <span class="preview-label">Selected text:</span>
+          <button class="preview-close" id="clear-selection">&times;</button>
+        </div>
+        <p class="preview-text" id="preview-text"></p>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <button class="action-btn" id="get-selection" title="Get selected text from page">
+          <span>📋</span>
+        </button>
+        <textarea 
+          id="user-input" 
+          placeholder="Ask me to fact-check or add to calendar..."
+          rows="1"
+        ></textarea>
+        <button class="send-btn" id="send-btn" title="Send message">
+          <span>➤</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- History Tab -->
+    <main class="tab-content" id="history-tab">
+      <div class="history-list" id="history-list">
+        <div class="empty-state">
+          <span class="empty-icon">📚</span>
+          <p>No fact-checks yet</p>
+          <p class="empty-hint">Your verified claims will appear here</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

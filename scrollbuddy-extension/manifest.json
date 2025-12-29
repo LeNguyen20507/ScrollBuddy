@@ -2,5 +2,27 @@
   "manifest_version": 3,
   "name": "ScrollBuddy",
   "version": "1.0.0",
-  "description": "Fact-check claims and create calendar events from any webpage"
+  "description": "Fact-check claims and create calendar events from any webpage",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "ScrollBuddy"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  }
 }
