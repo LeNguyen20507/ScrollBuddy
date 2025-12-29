@@ -35,6 +35,7 @@ app.get('/', (req, res) => {
       'POST /api/fact-check',
       'POST /api/create-event', 
       'POST /api/add-to-calendar',
+      'POST /api/add-to-tasks',
       'POST /api/chat',
       'GET /api/history'
     ]
@@ -167,49 +168,85 @@ Analyze this claim carefully, cross-reference the sources, and respond with JSON
 });
 
 // =====================
-// CREATE EVENT ENDPOINT
+// CREATE EVENT ENDPOINT (Calendar vs Task Classification)
 // =====================
 app.post('/api/create-event', async (req, res) => {
   try {
-    const { message, context } = req.body;
+    const { message, context, forceType } = req.body;
 
-    console.log('📅 Extracting event from:', message?.substring(0, 50) + '...');
+    console.log('📅 Extracting event/task from:', message?.substring(0, 50) + '...');
+    console.log('📅 Force type:', forceType || 'auto');
 
     const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayStr = today.toISOString().split('T')[0];
+    const endOfToday = '23:59';
 
-    const systemPrompt = `You are an assistant that extracts calendar event details from text. Be LENIENT and HELPFUL - extract what you can and use smart defaults for missing info.
+    // Build system prompt based on forceType
+    let systemPrompt;
+    
+    if (forceType === 'task') {
+      // Task-only mode - simpler prompt
+      systemPrompt = `You extract task details from user input. Return ONLY a task object.
 
-Your response MUST be valid JSON with this exact structure:
+Your response MUST be valid JSON:
 {
-  "title": "Event title (required - infer from context)",
-  "date": "YYYY-MM-DD format (required - use tomorrow if not specified)",
-  "time": "HH:MM format 24-hour (use 09:00 if not specified)",
+  "type": "task",
+  "title": "Task title (required)",
+  "notes": "Additional details (optional)",
+  "dueDate": "${todayStr}" (use today if not specified, format: YYYY-MM-DD)
+}
+
+TODAY IS ${todayStr}. Default dueDate to today if no date mentioned.
+Extract the task and respond with JSON only.`;
+    } else if (forceType === 'calendar') {
+      // Calendar-only mode - simpler prompt
+      systemPrompt = `You extract calendar event details from user input. Return ONLY a calendar event object.
+
+Your response MUST be valid JSON:
+{
+  "type": "calendar",
+  "title": "Event title (required)",
+  "date": "${todayStr}" (use today if not specified, format: YYYY-MM-DD),
+  "time": "${endOfToday}" (use end of day if not specified, format: HH:MM 24-hour),
   "location": "Location or empty string",
   "description": "Brief description"
 }
 
-CRITICAL RULES:
-- TODAY IS ${today.toISOString().split('T')[0]} (YEAR IS 2025)
-- ALWAYS use year 2025 or later for dates
-- If no specific date: use tomorrow (${tomorrow.toISOString().split('T')[0]})
-- If no specific time: use 09:00
-- If no location: use empty string
-- NEVER ask for more information - just make reasonable assumptions
-- "tomorrow" = ${tomorrow.toISOString().split('T')[0]}
-- "next week" = add 7 days from today
-- "Monday" = next Monday from ${today.toISOString().split('T')[0]}
+TODAY IS ${todayStr}. Default to today at ${endOfToday} if no date/time mentioned.
+Extract the event and respond with JSON only.`;
+    } else {
+      // Auto-detect mode
+      systemPrompt = `You help users organize information into Google Calendar events or Google Tasks.
 
-Only return error if there's absolutely no event-like content at all.`;
+CLASSIFICATION:
+- CALENDAR: Has specific TIME (e.g., "meeting at 3pm", "call at 10am")
+- TASK: No specific time, just something to do (e.g., "buy groceries", "read chapter 5", "bring charger")
 
-    const userPrompt = `Extract calendar event details from this:
+Your response MUST be valid JSON:
 
-USER REQUEST: ${message}
+For Calendar (has specific time):
+{
+  "type": "calendar",
+  "title": "Event title",
+  "date": "YYYY-MM-DD",
+  "time": "HH:MM (24-hour)",
+  "location": "",
+  "description": ""
+}
 
-${context ? `PAGE CONTEXT:\n${context}` : ''}
+For Task (no specific time):
+{
+  "type": "task",
+  "title": "Task title",
+  "notes": "",
+  "dueDate": "YYYY-MM-DD or null"
+}
 
+TODAY IS ${todayStr}. Default date to today. Default time to ${endOfToday} for calendar events.
 Respond with JSON only.`;
+    }
+
+    const userPrompt = `${message}`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -222,20 +259,51 @@ Respond with JSON only.`;
     });
 
     const responseText = completion.choices[0].message.content;
-    let event;
+    let result;
     
     try {
-      event = JSON.parse(responseText);
+      result = JSON.parse(responseText);
     } catch (parseError) {
-      return res.status(400).json({ error: 'Could not extract event details' });
+      return res.status(400).json({ error: 'Could not extract event/task details' });
     }
 
-    if (event.error) {
-      return res.status(400).json({ error: event.error });
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
     }
 
-    console.log('✅ Event extracted:', event.title);
-    res.json({ event });
+    // Force type if user explicitly chose one
+    if (forceType) {
+      result.type = forceType;
+      console.log('📅 Forcing type to:', forceType);
+    }
+
+    // Determine if it's a calendar event or task
+    const isTask = result.type === 'task';
+    
+    if (isTask) {
+      console.log('✅ Task extracted:', result.title);
+      res.json({ 
+        task: {
+          title: result.title,
+          notes: result.notes || result.description || '',
+          dueDate: result.dueDate || null
+        },
+        type: 'task'
+      });
+    } else {
+      console.log('✅ Calendar event extracted:', result.title);
+      res.json({ 
+        event: {
+          title: result.title,
+          date: result.date,
+          time: result.time || '09:00',
+          endTime: result.endTime,
+          location: result.location || '',
+          description: result.description || ''
+        },
+        type: 'calendar'
+      });
+    }
 
   } catch (error) {
     console.error('❌ Create event error:', error);
@@ -266,7 +334,7 @@ app.post('/api/add-to-calendar', async (req, res) => {
 
     // Parse date and time properly
     let startDateTime;
-    const timeStr = event.time || '09:00';
+    const timeStr = event.time || '23:59'; // Default to end of day
     
     // Handle various date formats
     if (event.date) {
@@ -274,9 +342,8 @@ app.post('/api/add-to-calendar', async (req, res) => {
       const dateStr = event.date.includes('T') ? event.date.split('T')[0] : event.date;
       startDateTime = new Date(`${dateStr}T${timeStr}:00`);
     } else {
-      // Default to tomorrow at specified time
+      // Default to today at end of day
       startDateTime = new Date();
-      startDateTime.setDate(startDateTime.getDate() + 1);
       const [hours, minutes] = timeStr.split(':');
       startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
     }
@@ -322,6 +389,54 @@ app.post('/api/add-to-calendar', async (req, res) => {
     console.error('❌ Add to calendar error:', error);
     res.status(500).json({ 
       error: 'Failed to add to calendar',
+      details: error.message 
+    });
+  }
+});
+
+// =====================
+// ADD TO TASKS (n8n webhook)
+// =====================
+app.post('/api/add-to-tasks', async (req, res) => {
+  try {
+    const { task } = req.body;
+    const webhookUrl = process.env.N8N_TASKS_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+      return res.status(500).json({ 
+        error: 'Tasks integration not configured',
+        details: 'N8N_TASKS_WEBHOOK_URL not set' 
+      });
+    }
+
+    console.log('✅ Sending to Google Tasks:', task.title);
+
+    // Build payload for Google Tasks
+    const payload = {
+      title: task.title,
+      notes: task.notes || ''
+    };
+
+    // Add due date if provided (Google Tasks expects RFC 3339 date)
+    if (task.dueDate) {
+      // Google Tasks expects due date as end of day
+      payload.due = `${task.dueDate}T23:59:59.000Z`;
+    }
+
+    console.log('✅ Tasks payload:', JSON.stringify(payload, null, 2));
+
+    const response = await axios.post(webhookUrl, payload);
+
+    console.log('✅ Task created');
+    res.json({ 
+      success: true, 
+      taskId: response.data?.taskId || response.data?.id
+    });
+
+  } catch (error) {
+    console.error('❌ Add to tasks error:', error);
+    res.status(500).json({ 
+      error: 'Failed to add to tasks',
       details: error.message 
     });
   }
@@ -432,12 +547,13 @@ app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════╗
 ║    ScrollBuddy Server Running          ║
-║   http://localhost:${PORT}             ║
+║   http://localhost:${PORT}                ║
 ╠════════════════════════════════════════╣
 ║   Endpoints:                           ║
 ║   • POST /api/fact-check               ║
 ║   • POST /api/create-event             ║
 ║   • POST /api/add-to-calendar          ║
+║   • POST /api/add-to-tasks             ║
 ║   • POST /api/chat                     ║
 ║   • GET  /api/history                  ║
 ╚════════════════════════════════════════╝

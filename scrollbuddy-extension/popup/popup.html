@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ScrollBuddy</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,12 +12,11 @@
     <!-- Header -->
     <header class="header">
       <div class="logo">
-        <span class="logo-icon">🔍</span>
+        <img src="../icons/scrollbuddy-logo.png" alt="ScrollBuddy" class="logo-img">
         <h1>ScrollBuddy</h1>
       </div>
-      <button class="focus-btn" id="focus-btn" title="Focus on current page">
-        <span class="focus-icon">👁️</span>
-        <span class="focus-text">Focus</span>
+      <button class="focus-btn" id="focus-btn" title="Read the current page">
+        <span class="focus-text">Read Page</span>
       </button>
     </header>
 
@@ -44,9 +44,9 @@
             <p>Hi! I'm ScrollBuddy 👋</p>
             <p>I can help you:</p>
             <ul>
-              <li><strong>Fact-check</strong> - Select text and click 📋</li>
-              <li><strong>Focus mode</strong> - Click 👁️ to read the full page</li>
-              <li><strong>Add to calendar</strong> - Tell me about an event</li>
+              <li><strong>Verify claims</strong> - Select text and click <i class="fa-solid fa-check"></i></li>
+              <li><strong>Read pages</strong> - Click "Read Page" to analyze the full page</li>
+              <li><strong>Add events & tasks</strong> - Click <i class="fa-solid fa-ellipsis"></i> for Google Calendar & Tasks</li>
             </ul>
           </div>
         </div>
@@ -54,12 +54,27 @@
 
       <!-- Input Area -->
       <div class="input-area">
-        <button class="action-btn" id="get-selection" title="Fact-check selected text">
-          <span>📋</span>
+        <button class="action-btn verify-btn" id="get-selection" title="Fact-check selected text">
+          <i class="fa-solid fa-check"></i>
         </button>
-        <button class="action-btn calendar-btn" id="add-event-btn" title="Add event to calendar">
-          <span>📅</span>
-        </button>
+        
+        <!-- MCP Tools Dropdown -->
+        <div class="mcp-tools-wrapper">
+          <button class="action-btn mcp-tools-btn" id="mcp-tools-btn" title="MCP Tools">
+            <i class="fa-solid fa-ellipsis"></i>
+          </button>
+          <div class="mcp-tools-dropdown" id="mcp-tools-dropdown">
+            <button class="mcp-tool-item" id="add-calendar-btn">
+              <img src="../icons/google-calendar.png" alt="Calendar" class="tool-icon">
+              <span>Google Calendar</span>
+            </button>
+            <button class="mcp-tool-item" id="add-task-btn">
+              <img src="../icons/google-tasks.png" alt="Tasks" class="tool-icon">
+              <span>Google Tasks</span>
+            </button>
+          </div>
+        </div>
+        
         <textarea 
           id="user-input" 
           placeholder="Ask me anything about this page..."

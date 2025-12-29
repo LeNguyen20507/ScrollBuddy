@@ -2,7 +2,7 @@
 
 ## System Overview
 
-ScrollBuddy is a browser-based AI assistant that enables users to fact-check claims and create calendar events directly from any webpage. The system uses a three-tier architecture with a Chrome extension frontend, Node.js backend, and external AI/automation services.
+ScrollBuddy is a browser-based AI assistant that enables users to fact-check claims, create calendar events, and manage tasks directly from any webpage. The system uses a three-tier architecture with a Chrome extension frontend, Node.js backend, and external AI/automation services.
 
 ---
 
@@ -35,6 +35,7 @@ ScrollBuddy is a browser-based AI assistant that enables users to fact-check cla
 - **Web Search**: Model Context Protocol (MCP) integration
 - **Automation**: n8n workflow automation
 - **Calendar**: Google Calendar API (via n8n webhook)
+- **Tasks**: Google Tasks API (via n8n webhook)
 
 ### **Data Storage**
 - **Local Storage**: Chrome Extension Storage API (user preferences, history)
@@ -48,9 +49,15 @@ ScrollBuddy is a browser-based AI assistant that enables users to fact-check cla
 **Components:**
 - **popup.html/popup.js/popup.css**: Main user interface
   - Chat interface for AI interactions
-  - Tab navigation (Chat, Calendar, History)
+  - Tab navigation (Chat, Calendar/Tasks, History)
   - Focus mode for page analysis
-  - Event creation interface
+  - Event and task creation interface
+  - **UI Elements**:
+    - Logo: `assets/Gemini_Generated_Image_6czz1h6czz1h6czz.PNG`
+    - Verify icon: `<i class="fa-solid fa-check"></i>` (FontAwesome)
+    - MCP Tools button (`...`): Opens dropdown with Google Calendar and Google Tasks options
+    - Calendar icon: `Google_Calendar_icon_(2020).svg.png`
+    - Tasks icon: `googletasks.png`
 
 - **content.js**: Content script injected into web pages
   - Text selection capture
@@ -85,8 +92,9 @@ ScrollBuddy is a browser-based AI assistant that enables users to fact-check cla
 **API Endpoints:**
 - `GET /api/health` - Health check
 - `POST /api/fact-check` - Claim verification with web search
-- `POST /api/create-event` - Extract event details from text
-- `POST /api/add-to-calendar` - Send event to n8n webhook
+- `POST /api/create-event` - Extract event details from text (calendar or task)
+- `POST /api/add-to-calendar` - Send event to n8n Google Calendar webhook
+- `POST /api/add-to-tasks` - Send task to n8n Google Tasks webhook
 - `POST /api/chat` - General AI chat with page context
 - `GET /api/history` - Retrieve fact-check history
 
@@ -104,13 +112,19 @@ ScrollBuddy is a browser-based AI assistant that enables users to fact-check cla
 - Context gathering for claims
 
 **n8n Automation**
-- Webhook endpoint for calendar events
+- Webhook endpoints for calendar events and tasks
 - Google Calendar integration
-- Event scheduling automation
+- Google Tasks integration
+- Event and task scheduling automation
 
 **Google Calendar API**
 - Calendar event creation
 - Event management (via n8n)
+- Used for time-bound events with specific start/end times
+
+**Google Tasks API**
+- Task creation and management (via n8n)
+- Used for to-do items and action items without specific times
 
 ---
 
@@ -141,17 +155,40 @@ ScrollBuddy is a browser-based AI assistant that enables users to fact-check cla
    ↓
 2. POST /api/create-event
    ↓
-3. Backend: Claude AI extracts event details
+3. Backend: Claude AI analyzes and determines type (calendar vs task)
    ↓
-4. User confirms/edits event details
+4. If calendar event: Extract date, time, duration, location
    ↓
-5. POST /api/add-to-calendar
+5. User confirms/edits event details
    ↓
-6. Backend: Send to n8n webhook
+6. POST /api/add-to-calendar
    ↓
-7. n8n: Create Google Calendar event
+7. Backend: Send to n8n Google Calendar webhook
    ↓
-8. Confirmation returned to user
+8. n8n: Create Google Calendar event
+   ↓
+9. Confirmation returned to user
+```
+
+### **Google Tasks Flow**
+```
+1. User provides task text/context
+   ↓
+2. POST /api/create-event
+   ↓
+3. Backend: Claude AI analyzes and determines type (calendar vs task)
+   ↓
+4. If task: Extract title, notes, due date (optional)
+   ↓
+5. User confirms/edits task details
+   ↓
+6. POST /api/add-to-tasks
+   ↓
+7. Backend: Send to n8n Google Tasks webhook
+   ↓
+8. n8n: Create Google Task
+   ↓
+9. Confirmation returned to user
 ```
 
 ### **Chat Flow**
@@ -175,7 +212,8 @@ ScrollBuddy is a browser-based AI assistant that enables users to fact-check cla
 - `OPENAI_API_KEY` - OpenAI API authentication
 - `ANTHROPIC_API_KEY` - Claude AI authentication
 - `BRAVE_API_KEY` - Brave Search API authentication
-- `N8N_WEBHOOK_URL` - n8n calendar webhook endpoint
+- `N8N_CALENDAR_WEBHOOK_URL` - n8n Google Calendar webhook endpoint
+- `N8N_TASKS_WEBHOOK_URL` - n8n Google Tasks webhook endpoint
 - `DATA_PATH` - Local data storage path (default: `.scrollbuddy/`)
 - `PORT` - Server port (default: 3000)
 
@@ -229,14 +267,23 @@ Create a system architecture diagram for ScrollBuddy with the following componen
    - Brave Search API (web search)
    - n8n Automation Platform
    - Google Calendar API
+   - Google Tasks API
 
 5. **Data Storage**:
    - Chrome Local Storage (user data, history)
    - .scrollbuddy/ directory (fact-check logs, config)
 
+6. **UI Elements**:
+   - Logo: ScrollBuddy logo (assets/Gemini_Generated_Image_6czz1h6czz1h6czz.PNG)
+   - Verify button: FontAwesome check icon (<i class="fa-solid fa-check"></i>)
+   - MCP Tools dropdown (...): Opens Google Calendar and Google Tasks options
+   - Google Calendar icon (Google_Calendar_icon_(2020).svg.png)
+   - Google Tasks icon (googletasks.png)
+
 Show the following flows with arrows:
 - Fact-check flow: User → Extension → Backend → Brave Search → Claude AI → Storage → Response
 - Calendar flow: User → Extension → Backend → Claude AI → n8n → Google Calendar → Confirmation
+- Tasks flow: User → Extension → Backend → Claude AI → n8n → Google Tasks → Confirmation
 - Chat flow: User → Extension → Backend → Claude AI → Response
 
 Use colors to distinguish:
@@ -246,11 +293,12 @@ Use colors to distinguish:
 - Data storage (purple)
 
 Include icons/symbols for:
-- Browser extension icon
+- Browser extension icon (ScrollBuddy logo)
 - Server/API icon
 - AI/brain icon for Claude
 - Search icon for Brave
 - Calendar icon for Google Calendar
+- Tasks/checklist icon for Google Tasks
 - Automation icon for n8n
 ```
 
@@ -263,8 +311,130 @@ Include icons/symbols for:
 3. **Direct API Integration**: Custom MCP handler instead of MCP SDK stdio for better control
 4. **Stateless Backend**: Each request is independent, no session management
 5. **Client-Side History**: Fact-check history stored in extension storage for privacy
-6. **Webhook Integration**: n8n webhook for flexible calendar automation
+6. **Webhook Integration**: n8n webhooks for flexible calendar and task automation
 7. **CORS-Enabled**: Backend accessible from extension context
+8. **AI-Powered Classification**: Claude AI determines calendar vs task based on content analysis
+
+---
+
+## AI Prompt for Calendar vs Tasks Classification
+
+**System Prompt for Claude AI to distinguish between Calendar Events and Tasks:**
+
+```
+You are an intelligent assistant that helps users organize information from web pages into either Google Calendar events or Google Tasks.
+
+ANALYZE the user's input and DETERMINE whether it should be a:
+
+### GOOGLE CALENDAR EVENT
+Use when the content describes:
+- Scheduled meetings or appointments with specific date AND time
+- Events with a defined start and end time (e.g., "Meeting at 3pm-4pm")
+- Conferences, webinars, or live events with scheduled times
+- Deadlines with specific times (e.g., "Submit by Friday 5pm")
+- Recurring events with time patterns (e.g., "Weekly standup every Monday 9am")
+- Social gatherings, parties, or celebrations with set times
+- Travel itineraries with departure/arrival times
+
+Calendar Event Response Format:
+{
+  "type": "calendar",
+  "title": "Event title",
+  "startDate": "2025-12-29T14:00:00",
+  "endDate": "2025-12-29T15:00:00",
+  "location": "Location if mentioned",
+  "description": "Additional details",
+  "allDay": false
+}
+
+### GOOGLE TASKS
+Use when the content describes:
+- To-do items without specific times (e.g., "Read chapter 5")
+- Action items or reminders (e.g., "Remember to call John")
+- Goals or objectives without scheduled times
+- Items with only a due date, no specific time (e.g., "Due by Friday")
+- Shopping lists or checklist items
+- Follow-up actions from articles or emails
+- Tasks that can be completed anytime before a deadline
+- Notes or reminders to self
+
+Task Response Format:
+{
+  "type": "task",
+  "title": "Task title",
+  "notes": "Additional details or context",
+  "dueDate": "2025-12-29" (optional, date only, no time)
+}
+
+### CLASSIFICATION RULES:
+1. If there's a specific TIME mentioned → Calendar Event
+2. If there's only a DATE or no date at all → Task
+3. If it's an "event" you attend → Calendar Event
+4. If it's something you "do" or "complete" → Task
+5. If duration matters (start-end) → Calendar Event
+6. If completion matters (done/not done) → Task
+
+### EXAMPLES:
+
+Input: "Team meeting tomorrow at 2pm in Conference Room A"
+Output: { "type": "calendar", "title": "Team meeting", "startDate": "...", "location": "Conference Room A" }
+
+Input: "Don't forget to review the quarterly report before Friday"
+Output: { "type": "task", "title": "Review quarterly report", "dueDate": "2025-01-03" }
+
+Input: "The webinar starts at 10am EST on January 5th"
+Output: { "type": "calendar", "title": "Webinar", "startDate": "2025-01-05T10:00:00-05:00" }
+
+Input: "Need to buy groceries this week"
+Output: { "type": "task", "title": "Buy groceries", "notes": "This week" }
+
+Input: "Project deadline is December 31st at midnight"
+Output: { "type": "calendar", "title": "Project deadline", "startDate": "2025-12-31T23:59:00", "allDay": false }
+
+Input: "Finish reading the article about AI trends"
+Output: { "type": "task", "title": "Finish reading AI trends article" }
+```
+
+---
+
+## MCP Tools Integration
+
+### Available MCP Tools
+The extension provides a `...` (ellipsis) button that opens a dropdown menu with available MCP tools:
+
+| Tool | Icon | Description |
+|------|------|-------------|
+| **Verify/Fact-Check** | `<i class="fa-solid fa-check"></i>` | Verify selected text against web sources |
+| **Google Calendar** | `Google_Calendar_icon_(2020).svg.png` | Create calendar events from selected text |
+| **Google Tasks** | `googletasks.png` | Create tasks from selected text |
+
+### n8n Webhook Configuration
+
+**Google Calendar Webhook:**
+```
+URL: https://[your-n8n-instance]/webhook/calendar-event
+Method: POST
+Content-Type: application/json
+Body: {
+  "title": "Event title",
+  "startDate": "ISO 8601 datetime",
+  "endDate": "ISO 8601 datetime",
+  "location": "Optional location",
+  "description": "Optional description"
+}
+```
+
+**Google Tasks Webhook:**
+```
+URL: https://[your-n8n-instance]/webhook/google-task
+Method: POST
+Content-Type: application/json
+Body: {
+  "title": "Task title",
+  "notes": "Optional notes",
+  "dueDate": "YYYY-MM-DD (optional)"
+}
+```
 
 ---
 

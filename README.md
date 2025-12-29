@@ -15,7 +15,7 @@
 - **Backend**: Node.js + Express
 - **AI**: Claude API (Anthropic)
 - **Data Retrieval**: MCP (Brave Search + Filesystem)
-- **Automation**: n8n + Google Calendar API
+- **Automation**: n8n + Google Calendar API + Google Tasks API
 
 ---
 

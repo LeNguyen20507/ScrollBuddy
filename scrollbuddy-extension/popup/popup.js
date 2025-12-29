@@ -15,7 +15,10 @@ const focusBanner = document.getElementById('focus-banner');
 const focusTitle = document.getElementById('focus-title');
 const focusClose = document.getElementById('focus-close');
 const clearHistoryBtn = document.getElementById('clear-history');
-const addEventBtn = document.getElementById('add-event-btn');
+const mcpToolsBtn = document.getElementById('mcp-tools-btn');
+const mcpToolsDropdown = document.getElementById('mcp-tools-dropdown');
+const addCalendarBtn = document.getElementById('add-calendar-btn');
+const addTaskBtn = document.getElementById('add-task-btn');
 
 // State
 let selectedText = '';
@@ -113,8 +116,17 @@ function setupEventListeners() {
   focusBtn.addEventListener('click', toggleFocusMode);
   focusClose.addEventListener('click', exitFocusMode);
 
-  // Calendar event
-  addEventBtn.addEventListener('click', extractEventFromPage);
+  // MCP Tools dropdown
+  mcpToolsBtn.addEventListener('click', toggleMcpDropdown);
+  addCalendarBtn.addEventListener('click', () => extractEventFromPage('calendar'));
+  addTaskBtn.addEventListener('click', () => extractEventFromPage('task'));
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!mcpToolsBtn.contains(e.target) && !mcpToolsDropdown.contains(e.target)) {
+      mcpToolsDropdown.classList.remove('show');
+    }
+  });
 
   // Clear history
   clearHistoryBtn.addEventListener('click', clearHistory);
@@ -126,6 +138,12 @@ function setupEventListeners() {
 
   // Auto-resize textarea
   userInput.addEventListener('input', autoResizeTextarea);
+}
+
+// Toggle MCP Tools dropdown
+function toggleMcpDropdown(e) {
+  e.stopPropagation();
+  mcpToolsDropdown.classList.toggle('show');
 }
 
 // Auto-resize textarea
@@ -292,33 +310,43 @@ async function toggleFocusMode() {
   }
 }
 
-// Prompt user to add calendar event
-async function extractEventFromPage() {
-  // Prompt user for event details
-  const eventText = prompt('📅 What event would you like to add?\n\nExample: "Meeting tomorrow at 2pm" or "Flight to LA on Jan 5"');
+// Prompt user to add calendar event or task
+async function extractEventFromPage(forceType = null) {
+  // Close dropdown
+  mcpToolsDropdown.classList.remove('show');
+  
+  const isTask = forceType === 'task';
+  const promptText = isTask 
+    ? '✅ What task would you like to add?\n\nExample: "Read chapter 5" or "Call John about the project"'
+    : '📅 What event would you like to add?\n\nExample: "Meeting tomorrow at 2pm" or "Flight to LA on Jan 5"';
+  
+  const eventText = prompt(promptText);
   
   if (!eventText || !eventText.trim()) {
     return; // User cancelled
   }
   
-  addMessage(`📅 Adding: "${eventText}"`, 'user');
+  const icon = isTask ? '✅' : '📅';
+  addMessage(`${icon} Adding: "${eventText}"`, 'user');
   
   const typingId = showTyping();
   
   try {
-    const response = await createEvent(eventText, '');
+    const response = await createEvent(eventText, '', forceType);
     removeTyping(typingId);
     
-    if (response.event) {
+    if (response.type === 'task' && response.task) {
+      addTaskPreview(response.task);
+    } else if (response.event) {
       addEventPreview(response.event);
     } else if (response.error) {
       addMessage(`⚠️ ${response.error}`, 'assistant');
     } else {
-      addMessage('⚠️ Could not understand the event. Try something like "Meeting tomorrow at 3pm"', 'assistant');
+      addMessage('⚠️ Could not understand the request. Try being more specific.', 'assistant');
     }
   } catch (error) {
     removeTyping(typingId);
-    addMessage('❌ Failed to create event. Please try again.', 'assistant');
+    addMessage('❌ Failed to process. Please try again.', 'assistant');
   }
 }
 
@@ -407,11 +435,11 @@ async function factCheck(claim, context, userMessage) {
   return response.json();
 }
 
-async function createEvent(message, context) {
+async function createEvent(message, context, forceType = null) {
   const response = await fetch(`${API_URL}/api/create-event`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, context })
+    body: JSON.stringify({ message, context, forceType })
   });
   return response.json();
 }
@@ -437,6 +465,12 @@ function handleResponse(response, isFactCheck) {
     addFactCheckResult(response);
     saveToHistory(response);
     clearSelection();
+  } else if (response.task) {
+    // Task response - show message first if present
+    if (response.reply) {
+      addMessage(response.reply, 'assistant');
+    }
+    addTaskPreview(response.task);
   } else if (response.event) {
     // Calendar event response - show message first if present
     if (response.reply) {
@@ -564,8 +598,54 @@ async function addToCalendar(event) {
   }
 }
 
-// Make addToCalendar available globally
+// Add task preview and auto-confirm
+async function addTaskPreview(task) {
+  // Show the task details
+  const taskDetails = `✅ ${task.title}${task.dueDate ? '\n📅 Due: ' + task.dueDate : ''}${task.notes ? '\n📝 ' + task.notes : ''}`;
+  
+  // Ask for confirmation
+  const confirmed = confirm(`Add this task to Google Tasks?\n\n${taskDetails}`);
+  
+  if (confirmed) {
+    addMessage(`✅ Adding "${task.title}" to tasks...`, 'user');
+    await addToTasks(task);
+  } else {
+    addMessage(`✅ Task not added: ${task.title}`, 'assistant');
+  }
+}
+
+// Add to Google Tasks
+async function addToTasks(task) {
+  showToast('Adding to tasks...', 'success');
+  
+  try {
+    console.log('Sending to tasks:', task);
+    const response = await fetch(`${API_URL}/api/add-to-tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task })
+    });
+    
+    const result = await response.json();
+    console.log('Tasks response:', result);
+    
+    if (result.success) {
+      addMessage('✅ Task added to your Google Tasks!', 'assistant');
+      showToast('Task created!', 'success');
+    } else {
+      addMessage('❌ Failed to add task: ' + (result.error || 'Unknown error'), 'assistant');
+      showToast('Failed to add task', 'error');
+    }
+  } catch (error) {
+    console.error('Error adding to tasks:', error);
+    addMessage('❌ Failed to connect to tasks service', 'assistant');
+    showToast('Failed to add task', 'error');
+  }
+}
+
+// Make addToCalendar and addToTasks available globally
 window.addToCalendar = addToCalendar;
+window.addToTasks = addToTasks;
 
 // Typing indicator
 function showTyping() {
