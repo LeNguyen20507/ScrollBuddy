@@ -87,18 +87,34 @@ app.post('/api/fact-check', async (req, res) => {
     if (searchResults?.web?.results) {
       // Filter out the current page from sources
       const filteredResults = searchResults.web.results.filter(r => {
-        const sourceHostname = new URL(r.url).hostname.replace('www.', '');
-        return sourceHostname !== currentPageUrl;
+        try {
+          const sourceHostname = new URL(r.url).hostname.replace('www.', '');
+          return sourceHostname !== currentPageUrl;
+        } catch (e) {
+          // If URL parsing fails, include it anyway
+          return true;
+        }
       });
       
       console.log('✅ Sources after filtering:', filteredResults.length);
       
-      sources = filteredResults.slice(0, 5).map(r => ({
-        title: r.title,
-        url: r.url,
-        description: r.description,
-        siteName: new URL(r.url).hostname.replace('www.', '')
-      }));
+      sources = filteredResults.slice(0, 5).map(r => {
+        try {
+          return {
+            title: r.title,
+            url: r.url,
+            description: r.description,
+            siteName: new URL(r.url).hostname.replace('www.', '')
+          };
+        } catch (e) {
+          return {
+            title: r.title,
+            url: r.url,
+            description: r.description,
+            siteName: 'Unknown'
+          };
+        }
+      });
       
       sourcesContext = sources.map((s, i) => 
         `Source ${i + 1} (${s.siteName}): "${s.title}"\nURL: ${s.url}\nSnippet: ${s.description}`
