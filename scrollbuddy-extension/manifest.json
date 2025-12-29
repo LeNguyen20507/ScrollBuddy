@@ -1,0 +1,6 @@
+{
+  "manifest_version": 3,
+  "name": "ScrollBuddy",
+  "version": "1.0.0",
+  "description": "Fact-check claims and create calendar events from any webpage"
+}
