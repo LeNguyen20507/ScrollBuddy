@@ -72,42 +72,50 @@ app.post('/api/fact-check', async (req, res) => {
       sources = searchResults.web.results.map(r => ({
         title: r.title,
         url: r.url,
-        description: r.description
+        description: r.description,
+        siteName: new URL(r.url).hostname.replace('www.', '')
       }));
       
       sourcesContext = sources.map((s, i) => 
-        `Source ${i + 1}: ${s.title}\nURL: ${s.url}\nSnippet: ${s.description}`
+        `Source ${i + 1} (${s.siteName}): "${s.title}"\nURL: ${s.url}\nSnippet: ${s.description}`
       ).join('\n\n');
     }
 
     // Step 2: Ask GPT to analyze the claim
-    const systemPrompt = `You are a fact-checker assistant. Analyze claims and determine their accuracy.
+    const systemPrompt = `You are a professional fact-checker assistant. Analyze claims thoroughly and determine their accuracy.
 
 Your response MUST be valid JSON with this exact structure:
 {
   "verdict": "TRUE" | "FALSE" | "PARTIALLY TRUE" | "UNVERIFIABLE",
-  "explanation": "A clear 1-2 sentence explanation of your verdict",
-  "confidence": 0-100 (your confidence percentage),
-  "reasoning": "Detailed reasoning for your verdict"
+  "explanation": "A clear 2-3 sentence explanation of your verdict that references specific sources",
+  "confidence": 0-100 (your confidence percentage based on source quality and agreement),
+  "reasoning": "Detailed reasoning including which sources support or contradict the claim",
+  "sourceAnalysis": [
+    {
+      "sourceName": "Name of the source/publication",
+      "supports": true/false,
+      "relevance": "How this source relates to the claim"
+    }
+  ]
 }
 
 Guidelines:
-- TRUE: The claim is accurate based on available evidence
-- FALSE: The claim is demonstrably incorrect
-- PARTIALLY TRUE: The claim contains some truth but is misleading or incomplete
-- UNVERIFIABLE: Cannot determine accuracy from available sources
+- TRUE: Multiple reliable sources confirm the claim
+- FALSE: Reliable sources contradict the claim
+- PARTIALLY TRUE: Some aspects are correct but context is missing or misleading
+- UNVERIFIABLE: Insufficient reliable sources to determine accuracy
 
-Be objective and base your analysis on the provided sources when available.`;
+IMPORTANT: In your explanation, specifically mention which sources (by name) confirmed or contradicted the claim. For example: "According to Reuters and BBC News, this claim is accurate..."`;
 
     const userPrompt = `CLAIM TO VERIFY:
 "${claim}"
 
 ${context ? `PAGE CONTEXT:\n${context}\n` : ''}
-${sourcesContext ? `SEARCH RESULTS:\n${sourcesContext}` : 'No external sources available.'}
+${sourcesContext ? `SEARCH RESULTS FROM RELIABLE SOURCES:\n${sourcesContext}` : 'No external sources available - base verdict on general knowledge.'}
 
 ${userMessage ? `USER QUESTION: ${userMessage}` : ''}
 
-Analyze this claim and respond with JSON only.`;
+Analyze this claim carefully, cross-reference the sources, and respond with JSON only.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',

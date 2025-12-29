@@ -14,7 +14,20 @@
         <span class="logo-icon">🔍</span>
         <h1>ScrollBuddy</h1>
       </div>
+      <button class="focus-btn" id="focus-btn" title="Focus on current page">
+        <span class="focus-icon">👁️</span>
+        <span class="focus-text">Focus</span>
+      </button>
     </header>
+
+    <!-- Focus Mode Banner -->
+    <div class="focus-banner" id="focus-banner" style="display: none;">
+      <div class="focus-info">
+        <span class="focus-status">📖 Reading:</span>
+        <span class="focus-title" id="focus-title">Page title</span>
+      </div>
+      <button class="focus-close" id="focus-close" title="Exit focus mode">&times;</button>
+    </div>
 
     <!-- Tabs -->
     <nav class="tabs">
@@ -31,30 +44,22 @@
             <p>Hi! I'm ScrollBuddy 👋</p>
             <p>I can help you:</p>
             <ul>
-              <li><strong>Fact-check</strong> - Select text on the page and ask me to verify it</li>
-              <li><strong>Add to calendar</strong> - Tell me about an event to add</li>
+              <li><strong>Fact-check</strong> - Select text and click 📋</li>
+              <li><strong>Focus mode</strong> - Click 👁️ to read the full page</li>
+              <li><strong>Add to calendar</strong> - Tell me about an event</li>
             </ul>
           </div>
         </div>
       </div>
 
-      <!-- Selected Text Preview -->
-      <div class="selected-text-preview" id="selected-preview" style="display: none;">
-        <div class="preview-header">
-          <span class="preview-label">Selected text:</span>
-          <button class="preview-close" id="clear-selection">&times;</button>
-        </div>
-        <p class="preview-text" id="preview-text"></p>
-      </div>
-
       <!-- Input Area -->
       <div class="input-area">
-        <button class="action-btn" id="get-selection" title="Get selected text from page">
+        <button class="action-btn" id="get-selection" title="Fact-check selected text">
           <span>📋</span>
         </button>
         <textarea 
           id="user-input" 
-          placeholder="Ask me to fact-check or add to calendar..."
+          placeholder="Ask me anything about this page..."
           rows="1"
         ></textarea>
         <button class="send-btn" id="send-btn" title="Send message">
@@ -65,6 +70,12 @@
 
     <!-- History Tab -->
     <main class="tab-content" id="history-tab">
+      <div class="history-header">
+        <span class="history-title">Fact-check History</span>
+        <button class="clear-history-btn" id="clear-history" title="Clear all history">
+          🗑️ Clear
+        </button>
+      </div>
       <div class="history-list" id="history-list">
         <div class="empty-state">
           <span class="empty-icon">📚</span>

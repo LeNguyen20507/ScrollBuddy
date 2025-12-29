@@ -1,137 +1,82 @@
-// MCP Client Handler - Brave Search + Filesystem
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+// MCP Client Handler - Brave Search API + Local Filesystem
+import axios from 'axios';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 class MCPHandler {
   constructor() {
-    this.braveClient = null;
-    this.filesystemClient = null;
-    this.isConnected = false;
+    this.dataPath = path.resolve(__dirname, '..', process.env.DATA_PATH || '.scrollbuddy');
   }
 
-  // Initialize Brave Search MCP client
-  async initBraveSearch() {
-    if (this.braveClient) return this.braveClient;
-
-    try {
-      const transport = new StdioClientTransport({
-        command: "npx",
-        args: ["-y", "@modelcontextprotocol/server-brave-search"],
-        env: { 
-          ...process.env,
-          BRAVE_API_KEY: process.env.BRAVE_API_KEY 
-        }
-      });
-
-      this.braveClient = new Client({
-        name: "scrollbuddy-brave",
-        version: "1.0.0"
-      });
-
-      await this.braveClient.connect(transport);
-      console.log("✅ Brave Search MCP connected");
-      return this.braveClient;
-    } catch (error) {
-      console.error("❌ Failed to connect Brave Search MCP:", error.message);
-      throw error;
-    }
-  }
-
-  // Initialize Filesystem MCP client
-  async initFilesystem() {
-    if (this.filesystemClient) return this.filesystemClient;
-
-    try {
-      const dataPath = process.env.DATA_PATH || '.scrollbuddy';
-      
-      const transport = new StdioClientTransport({
-        command: "npx",
-        args: ["-y", "@modelcontextprotocol/server-filesystem", dataPath],
-        env: process.env
-      });
-
-      this.filesystemClient = new Client({
-        name: "scrollbuddy-filesystem",
-        version: "1.0.0"
-      });
-
-      await this.filesystemClient.connect(transport);
-      console.log("✅ Filesystem MCP connected");
-      return this.filesystemClient;
-    } catch (error) {
-      console.error("❌ Failed to connect Filesystem MCP:", error.message);
-      throw error;
-    }
-  }
-
-  // Search the web using Brave Search
+  // Direct Brave Search API call
   async webSearch(query, count = 5) {
     try {
-      const client = await this.initBraveSearch();
-      
-      const result = await client.callTool({
-        name: "brave_web_search",
-        arguments: { 
-          query: query,
-          count: count
+      const apiKey = process.env.BRAVE_API_KEY;
+      if (!apiKey) {
+        console.error("❌ BRAVE_API_KEY not set");
+        return { web: { results: [] } };
+      }
+
+      console.log("🔍 Searching Brave for:", query.substring(0, 50) + "...");
+
+      const response = await axios.get('https://api.search.brave.com/res/v1/web/search', {
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip',
+          'X-Subscription-Token': apiKey
+        },
+        params: {
+          q: query,
+          count: count,
+          text_decorations: false,
+          search_lang: 'en'
         }
       });
 
-      // Parse the result
-      if (result && result.content && result.content[0]) {
-        const textContent = result.content[0].text;
-        try {
-          return JSON.parse(textContent);
-        } catch {
-          return { raw: textContent };
-        }
+      const results = response.data?.web?.results || [];
+      console.log("✅ Brave Search found:", results.length, "results");
+      
+      // Log first result for debugging
+      if (results.length > 0) {
+        console.log("   First result:", results[0].title?.substring(0, 50));
       }
       
-      return result;
+      return { web: { results } };
     } catch (error) {
-      console.error("❌ Brave search error:", error.message);
-      throw error;
+      console.error("❌ Brave Search error:", error.response?.data || error.message);
+      return { web: { results: [] } };
     }
   }
 
-  // Read file using Filesystem MCP
+  // Direct filesystem operations
   async readFile(filePath) {
     try {
-      const client = await this.initFilesystem();
-      
-      const result = await client.callTool({
-        name: "read_file",
-        arguments: { path: filePath }
-      });
-
-      if (result && result.content && result.content[0]) {
-        return result.content[0].text;
-      }
-      
-      return null;
+      const fullPath = path.resolve(this.dataPath, filePath);
+      const content = await fs.readFile(fullPath, 'utf-8');
+      return content;
     } catch (error) {
-      console.error("❌ Read file error:", error.message);
-      throw error;
+      if (error.code !== 'ENOENT') {
+        console.error("❌ Read file error:", error.message);
+      }
+      return null;
     }
   }
 
-  // Write file using Filesystem MCP
   async writeFile(filePath, content) {
     try {
-      const client = await this.initFilesystem();
+      const fullPath = path.resolve(this.dataPath, filePath);
+      const dir = path.dirname(fullPath);
       
-      const result = await client.callTool({
-        name: "write_file",
-        arguments: { 
-          path: filePath,
-          content: content
-        }
-      });
-
-      return result;
+      // Ensure directory exists
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(fullPath, content, 'utf-8');
+      return true;
     } catch (error) {
       console.error("❌ Write file error:", error.message);
-      throw error;
+      return false;
     }
   }
 
@@ -141,14 +86,14 @@ class MCPHandler {
       const historyPath = 'fact-checks/history.json';
       let history = [];
       
-      try {
-        const existing = await this.readFile(historyPath);
-        if (existing) {
+      const existing = await this.readFile(historyPath);
+      if (existing) {
+        try {
           const parsed = JSON.parse(existing);
           history = parsed.factChecks || [];
+        } catch {
+          history = [];
         }
-      } catch {
-        // File doesn't exist yet, start fresh
       }
 
       history.unshift({
@@ -188,21 +133,9 @@ class MCPHandler {
     }
   }
 
-  // Cleanup connections
+  // Cleanup (kept for compatibility)
   async disconnect() {
-    try {
-      if (this.braveClient) {
-        await this.braveClient.close();
-        this.braveClient = null;
-      }
-      if (this.filesystemClient) {
-        await this.filesystemClient.close();
-        this.filesystemClient = null;
-      }
-      console.log("✅ MCP clients disconnected");
-    } catch (error) {
-      console.error("❌ Disconnect error:", error.message);
-    }
+    console.log("✅ Handler cleanup complete");
   }
 }
 

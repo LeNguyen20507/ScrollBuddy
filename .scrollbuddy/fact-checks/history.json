@@ -1,3 +1,106 @@
 {
-  "factChecks": []
+  "factChecks": [
+    {
+      "verdict": "TRUE",
+      "explanation": "Multiple reliable sources confirm that Nick Shirley stated the alleged fraud in Minnesota was 'so obvious' that a 'kindergartner could figure out that there is fraud going on' during his appearance on Fox News' 'The Big Weekend Show.' This has been reported by Fox News, WFIN, and Yahoo News.",
+      "confidence": 95,
+      "reasoning": "The claim is directly supported by multiple credible sources, including Fox News, which is the original source of the quote. Both WFIN and Yahoo News reiterated the statement accurately, confirming the authenticity of what was said during the show.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "Fox News",
+          "supports": true,
+          "relevance": "Fox News is where the quote originated and is reported as part of the content from Shirley's appearance."
+        },
+        {
+          "sourceName": "WFIN",
+          "supports": true,
+          "relevance": "WFIN echoed the Fox News report, confirming the statement made by Shirley."
+        },
+        {
+          "sourceName": "Yahoo News",
+          "supports": true,
+          "relevance": "Yahoo News also reported Shirley's statement accurately, providing further confirmation."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Walz defends record as viral video fuels Minnesota daycare fraud claims | Fox News",
+          "url": "https://www.foxnews.com/politics/tim-walz-pushes-back-minnesota-fraud-allegations-following-viral-daycare-video",
+          "description": "FBI SURGES RESOURCES TO MINNESOTA ... Nick Shirley said the alleged fraud in Minnesota was &quot;so obvious&quot; that a &quot;kindergartner could figure out that there is fraud going on.&quot;...",
+          "siteName": "foxnews.com"
+        },
+        {
+          "title": "Tim Walz pushes back on Minnesota fraud allegations following viral daycare video - Local News",
+          "url": "https://wfin.com/fox-political-news/tim-walz-pushes-back-on-minnesota-fraud-allegations-following-viral-daycare-video/",
+          "description": "During a Sunday appearance on Fox News’ “The Big Weekend Show,” Shirley said the alleged fraud in Minnesota was “so obvious” that a “kindergartner could figure out that there is fraud going on.”",
+          "siteName": "wfin.com"
+        },
+        {
+          "title": "Tim Walz pushes back on Minnesota fraud allegations following viral daycare video",
+          "url": "https://www.yahoo.com/news/articles/tim-walz-pushes-back-minnesota-013101413.html",
+          "description": "During a Sunday appearance on Fox News&#x27; &quot;The Big Weekend Show,&quot; Shirley said the alleged fraud in Minnesota was &quot;so obvious&quot; that a &quot;kindergartner could figure out that there is fraud going on.&quot;",
+          "siteName": "yahoo.com"
+        }
+      ],
+      "claim": "During a Sunday appearance on Fox News' \"The Big Weekend Show,\" Shirley said the alleged fraud in Minnesota was \"so obvious\" that a \"kindergartner could figure out that there is fraud going on.\"",
+      "id": 1766993425351,
+      "timestamp": "2025-12-29T07:30:25.351Z"
+    },
+    {
+      "verdict": "TRUE",
+      "explanation": "Multiple reliable sources confirm that Ben Black's April Fools' story was mistakenly presented as real news by Google's AI. According to BBC News and TechSpot, he expressed his shock at discovering that his fabricated article was used by Google's AI tool as actual information.",
+      "confidence": 90,
+      "reasoning": "The primary sources, including BBC News, TechSpot, and others corroborate Mr. Black's claim about his prank story being misrepresented by Google's AI. These articles detail his experiences and the confusion that occurred when the false information was circulated as fact.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "BBC",
+          "supports": true,
+          "relevance": "Detailed account of Ben Black's experience with Google's AI presenting his April Fools' story as real news."
+        },
+        {
+          "sourceName": "TechSpot",
+          "supports": true,
+          "relevance": "Confirmation of the incident involving Google's AI summarizing the fake story as factual."
+        },
+        {
+          "sourceName": "Cryptotimes",
+          "supports": true,
+          "relevance": "Reports on Google's AI sharing Black's fake stories as real news."
+        },
+        {
+          "sourceName": "NewsBytes",
+          "supports": true,
+          "relevance": "Affirms that Google AI mistakenly presented the prank as real news."
+        },
+        {
+          "sourceName": "Reddit",
+          "supports": false,
+          "relevance": "Comments on the phenomenon but does not provide authoritative confirmation nor details of the incident."
+        }
+      ],
+      "sources": [
+        {
+          "title": "'Google AI presented my April Fools' story as real news'",
+          "url": "https://www.bbc.com/news/articles/cly12egqq5ko",
+          "description": "Despite altering the wording of his article that afternoon, when he searched for it on 1 April he said he was &quot;shocked&quot; and &quot;worried&quot; to find the false information being used by Google&#x27;s AI tool and presented as real information. Google said it was looking into the matter. Mr Black decided to begin writing fake stories for April Fools&#x27; Day for &quot;a bit of fun&quot; and said his wife usually helped him come up with the ideas.",
+          "siteName": "bbc.com"
+        },
+        {
+          "title": "Google’s AI Presented My \"April Fool's\" Story As Real News: Journalist",
+          "url": "https://www.cryptotimes.io/2025/04/03/googles-ai-presented-my-april-fools-story-as-real-news-journalist/",
+          "description": "Google’s artificial intelligence (AI) tool shares the past fake stories of United Kingdom journalist Ben Black as real stories.",
+          "siteName": "cryptotimes.io"
+        },
+        {
+          "title": "Google AI falls for April Fools' prank story, presents it as real news | TechSpot",
+          "url": "https://www.techspot.com/news/107406-google-ai-falls-journalist-april-fools-prank-presents.html",
+          "description": "It refused, but that was human error. Fast forward to 2025, and Ben was shocked to find that Google&#x27;s AI Overview had used his fake story as the basis for its summary and presented it as fact.",
+          "siteName": "techspot.com"
+        }
+      ],
+      "claim": "'Google AI presented my April Fools' story as real news'",
+      "id": 1766992708519,
+      "timestamp": "2025-12-29T07:18:28.519Z"
+    }
+  ]
 }

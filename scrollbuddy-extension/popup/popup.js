@@ -7,23 +7,47 @@ const messagesContainer = document.getElementById('messages');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
 const getSelectionBtn = document.getElementById('get-selection');
-const selectedPreview = document.getElementById('selected-preview');
-const previewText = document.getElementById('preview-text');
-const clearSelectionBtn = document.getElementById('clear-selection');
 const tabs = document.querySelectorAll('.tab');
 const tabContents = document.querySelectorAll('.tab-content');
 const historyList = document.getElementById('history-list');
+const focusBtn = document.getElementById('focus-btn');
+const focusBanner = document.getElementById('focus-banner');
+const focusTitle = document.getElementById('focus-title');
+const focusClose = document.getElementById('focus-close');
+const clearHistoryBtn = document.getElementById('clear-history');
 
 // State
 let selectedText = '';
 let pageContext = '';
+let focusMode = false;
+let focusedPageContent = '';
+let focusedPageTitle = '';
+let focusedPageUrl = '';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadHistory();
   setupEventListeners();
   autoResizeTextarea();
+  restoreFocusMode();
 });
+
+// Restore focus mode state from storage
+async function restoreFocusMode() {
+  const result = await chrome.storage.local.get(['focusMode', 'focusedPageContent', 'focusedPageTitle', 'focusedPageUrl']);
+  
+  if (result.focusMode) {
+    focusMode = true;
+    focusedPageContent = result.focusedPageContent || '';
+    focusedPageTitle = result.focusedPageTitle || '';
+    focusedPageUrl = result.focusedPageUrl || '';
+    
+    // Restore UI state
+    focusBtn.classList.add('active');
+    focusBanner.style.display = 'flex';
+    focusTitle.textContent = focusedPageTitle.length > 40 ? focusedPageTitle.substring(0, 40) + '...' : focusedPageTitle;
+  }
+}
 
 // Event Listeners
 function setupEventListeners() {
@@ -36,11 +60,15 @@ function setupEventListeners() {
     }
   });
 
-  // Get selection from page
+  // Get selection from page (fact-check)
   getSelectionBtn.addEventListener('click', getSelectedText);
 
-  // Clear selection
-  clearSelectionBtn.addEventListener('click', clearSelection);
+  // Focus mode
+  focusBtn.addEventListener('click', toggleFocusMode);
+  focusClose.addEventListener('click', exitFocusMode);
+
+  // Clear history
+  clearHistoryBtn.addEventListener('click', clearHistory);
 
   // Tab switching
   tabs.forEach(tab => {
@@ -66,7 +94,7 @@ function switchTab(tabName) {
   document.getElementById(`${tabName}-tab`).classList.add('active');
 }
 
-// Get selected text from page
+// Get selected text from page and auto fact-check
 async function getSelectedText() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -87,12 +115,31 @@ async function getSelectedText() {
         selectedText = selection;
         pageContext = `Page: ${title}\nURL: ${url}\nContent: ${pageContent}`;
         
-        previewText.textContent = selectedText.length > 150 
-          ? selectedText.substring(0, 150) + '...' 
-          : selectedText;
-        selectedPreview.style.display = 'block';
+        // Show what we're checking
+        addMessage(`Fact-checking: "${selection.length > 100 ? selection.substring(0, 100) + '...' : selection}"`, 'user');
         
-        showToast('Text captured!', 'success');
+        // Auto-trigger fact-check
+        const typingId = showTyping();
+        
+        try {
+          const response = await factCheck(selectedText, pageContext, 'Verify this claim');
+          removeTyping(typingId);
+          
+          if (response.verdict) {
+            addFactCheckResult(response);
+            saveToHistory(response);
+          } else if (response.error) {
+            addMessage(response.error, 'assistant');
+          }
+        } catch (error) {
+          removeTyping(typingId);
+          addMessage('Failed to fact-check. Please try again.', 'assistant');
+        }
+        
+        // Clear selection after checking
+        selectedText = '';
+        pageContext = '';
+        
       } else {
         showToast('No text selected on page', 'error');
       }
@@ -103,11 +150,121 @@ async function getSelectedText() {
   }
 }
 
-// Clear selection
-function clearSelection() {
-  selectedText = '';
-  pageContext = '';
-  selectedPreview.style.display = 'none';
+// =====================
+// FOCUS MODE
+// =====================
+async function toggleFocusMode() {
+  if (focusMode) {
+    exitFocusMode();
+    return;
+  }
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    // Check if we can access this page
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('about:')) {
+      showToast('Cannot access this page', 'error');
+      addMessage('⚠️ I cannot read browser system pages. Please navigate to a regular website.', 'assistant');
+      return;
+    }
+
+    showToast('Reading page...', 'success');
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      function: () => {
+        // Try to get main article content
+        const article = document.querySelector('article');
+        const main = document.querySelector('main');
+        const body = document.body;
+        
+        let content = '';
+        
+        // Try to get article text first
+        if (article) {
+          content = article.innerText;
+        } else if (main) {
+          content = main.innerText;
+        } else {
+          content = body.innerText;
+        }
+        
+        // Limit content length
+        const maxLength = 8000;
+        if (content.length > maxLength) {
+          content = content.substring(0, maxLength) + '\n\n[Content truncated...]';
+        }
+        
+        return {
+          content: content,
+          title: document.title,
+          url: window.location.href,
+          success: content.length > 100
+        };
+      }
+    });
+
+    if (results && results[0] && results[0].result) {
+      const { content, title, url, success } = results[0].result;
+      
+      if (success) {
+        focusMode = true;
+        focusedPageContent = content;
+        focusedPageTitle = title;
+        focusedPageUrl = url;
+        
+        // Save to storage for persistence
+        await chrome.storage.local.set({
+          focusMode: true,
+          focusedPageContent: content,
+          focusedPageTitle: title,
+          focusedPageUrl: url
+        });
+        
+        // Update UI
+        focusBtn.classList.add('active');
+        focusBanner.style.display = 'flex';
+        focusTitle.textContent = title.length > 40 ? title.substring(0, 40) + '...' : title;
+        
+        addMessage(`📖 **Focus Mode Active**\n\nI'm now reading: "${title}"\n\nAsk me anything about this article! I can summarize it, answer questions, or help you understand specific parts.`, 'assistant');
+        
+        showToast('Focus mode active!', 'success');
+      } else {
+        addMessage('⚠️ I was blocked from reading this page\'s content. This might be due to site restrictions or paywall. Try selecting specific text instead using the 📋 button.', 'assistant');
+      }
+    }
+  } catch (error) {
+    console.error('Focus mode error:', error);
+    addMessage('⚠️ I couldn\'t access this page. Some websites block content reading. Try using the 📋 button to select specific text instead.', 'assistant');
+  }
+}
+
+async function exitFocusMode() {
+  focusMode = false;
+  focusedPageContent = '';
+  focusedPageTitle = '';
+  focusedPageUrl = '';
+  
+  // Clear from storage
+  await chrome.storage.local.remove(['focusMode', 'focusedPageContent', 'focusedPageTitle', 'focusedPageUrl']);
+  
+  focusBtn.classList.remove('active');
+  focusBanner.style.display = 'none';
+  
+  showToast('Focus mode off', 'success');
+}
+
+// =====================
+// CLEAR HISTORY
+// =====================
+function clearHistory() {
+  if (confirm('Clear all fact-check history?')) {
+    chrome.storage.local.set({ factCheckHistory: [] }, () => {
+      renderHistory([]);
+      showToast('History cleared', 'success');
+    });
+  }
 }
 
 // Handle send message
@@ -124,26 +281,31 @@ async function handleSend() {
   const typingId = showTyping();
 
   try {
+    // Build context based on focus mode
+    let contextToSend = pageContext;
+    if (focusMode && focusedPageContent) {
+      contextToSend = `Page: ${focusedPageTitle}\nURL: ${focusedPageUrl}\n\nFull Page Content:\n${focusedPageContent}`;
+    }
+
     // Determine intent (fact-check or calendar)
-    const isFactCheck = message.toLowerCase().includes('fact') || 
+    const isFactCheck = (message.toLowerCase().includes('fact') || 
                         message.toLowerCase().includes('check') ||
                         message.toLowerCase().includes('verify') ||
-                        message.toLowerCase().includes('true') ||
+                        message.toLowerCase().includes('true')) &&
                         selectedText;
     
     const isCalendar = message.toLowerCase().includes('calendar') ||
                        message.toLowerCase().includes('event') ||
-                       message.toLowerCase().includes('add') ||
                        message.toLowerCase().includes('schedule');
 
     let response;
     
     if (isFactCheck && selectedText) {
-      response = await factCheck(selectedText, pageContext, message);
+      response = await factCheck(selectedText, contextToSend, message);
     } else if (isCalendar) {
-      response = await createEvent(message, pageContext);
+      response = await createEvent(message, contextToSend);
     } else {
-      response = await chat(message, selectedText, pageContext);
+      response = await chat(message, selectedText, contextToSend);
     }
 
     removeTyping(typingId);
@@ -224,12 +386,30 @@ function addFactCheckResult(result) {
     'unverifiable': '❓'
   }[result.verdict.toLowerCase()] || '❓';
 
+  // Build sources HTML with site names
   let sourcesHtml = '';
   if (result.sources && result.sources.length > 0) {
+    const sourceItems = result.sources.map(s => {
+      const siteName = s.siteName || (s.url ? new URL(s.url).hostname.replace('www.', '') : 'Unknown');
+      return `
+        <div class="source-item">
+          <span class="source-site">${escapeHtml(siteName)}</span>
+          <a href="${s.url}" target="_blank" class="source-link">${escapeHtml(s.title || 'View source')}</a>
+        </div>
+      `;
+    }).join('');
+    
     sourcesHtml = `
       <div class="sources">
-        <div class="sources-title">Sources:</div>
-        ${result.sources.map(s => `<a href="${s.url}" target="_blank" class="source-link">${s.title || s.url}</a>`).join('')}
+        <div class="sources-title">📰 Verified against ${result.sources.length} source${result.sources.length > 1 ? 's' : ''}:</div>
+        ${sourceItems}
+      </div>
+    `;
+  } else {
+    sourcesHtml = `
+      <div class="sources no-sources">
+        <div class="sources-title">⚠️ No external sources found</div>
+        <p class="sources-note">Verdict based on AI knowledge only</p>
       </div>
     `;
   }
@@ -237,11 +417,11 @@ function addFactCheckResult(result) {
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message assistant';
   messageDiv.innerHTML = `
-    <div class="message-content">
+    <div class="message-content fact-check-result">
       <div class="verdict ${verdictClass}">
         ${verdictIcon} ${result.verdict}
       </div>
-      <p>${escapeHtml(result.explanation)}</p>
+      <p class="explanation">${escapeHtml(result.explanation)}</p>
       <div class="confidence-bar">
         <div class="confidence-label">Confidence: ${result.confidence}%</div>
         <div class="confidence-track">
