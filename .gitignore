@@ -1,0 +1,56 @@
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# Node modules
+node_modules/
+scrollbuddy-server/node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Data storage
+.scrollbuddy/fact-checks/history.json
+.scrollbuddy/config/settings.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+*.crx
+*.pem
+
+# Chrome extension packaging
+scrollbuddy-extension.zip
+
+# n8n data
+n8n/
+.n8n/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
