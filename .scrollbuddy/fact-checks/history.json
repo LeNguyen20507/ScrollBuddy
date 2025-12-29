@@ -2,6 +2,103 @@
   "factChecks": [
     {
       "verdict": "TRUE",
+      "explanation": "Multiple reliable sources confirm that Waymo is recalling its software after its self-driving cars failed to stop for stopped school buses. According to NPR, Advanced Manufacturing, and Axios, the decision was made in response to safety concerns and reports of illegal activity.",
+      "confidence": 95,
+      "reasoning": "The claim is supported by several reputable sources, including NPR, Advanced Manufacturing, and Axios. All these sources report that Waymo is indeed recalling software due to incidents where its cars passed stopped school buses, alignment among them strengthens the credibility of the claim.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "NPR",
+          "supports": true,
+          "relevance": "Reports on Waymo's software recall related to school bus passing incidents."
+        },
+        {
+          "sourceName": "Advanced Manufacturing",
+          "supports": true,
+          "relevance": "Details on the voluntary software recall by Waymo due to failures in stopping for school buses."
+        },
+        {
+          "sourceName": "Axios",
+          "supports": true,
+          "relevance": "Confirms Waymo's decision to issue a software recall following a federal investigation."
+        },
+        {
+          "sourceName": "KUT Radio",
+          "supports": true,
+          "relevance": "Reports on Waymo's recall in the context of incidents in Austin and corroborates the details mentioned."
+        },
+        {
+          "sourceName": "Reddit",
+          "supports": false,
+          "relevance": "While it discusses the recall, it does not provide concrete information verifying the claim; it serves more as commentary."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Waymo will recall software after its self-driving cars passed stopped school buses",
+          "url": "https://www.npr.org/2025/12/06/nx-s1-5635614/waymo-school-buses-recall",
+          "description": "Waymo updating software after self-driving cars passed stopped school buses Waymo is issuing a software recall for its self-driving cars after reports the company&#x27;s autonomous vehicles failed to stop for school buses.",
+          "siteName": "npr.org"
+        },
+        {
+          "title": "Waymo Recalls Software After Self-Driving Cars Pass School Buses | Manufacturing News Desk | advancedmanufacturing.org",
+          "url": "https://www.advancedmanufacturing.org/news-desk/waymo-recalls-software-after-self-driving-cars-pass-school-buses/article_c7b391b9-f226-4712-aab3-0d1bb13f6e91.html",
+          "description": "“We have made the decision to file a voluntary software recall with NHTSA (National Highway Traffic Safety Administration) related to appropriately slowing and stopping in these scenarios.”",
+          "siteName": "advancedmanufacturing.org"
+        },
+        {
+          "title": "Waymo agrees to software recall to fix illegal school bus passing",
+          "url": "https://www.axios.com/2025/12/05/waymo-recall-school-buses",
+          "description": "Waymo said late Friday it will issue a voluntary software recall in response to a federal safety probe of its self-driving cars for illegally passing school buses.",
+          "siteName": "axios.com"
+        }
+      ],
+      "claim": "Waymo will recall software after its self-driving cars passed stopped school buses",
+      "id": 1767030098422,
+      "timestamp": "2025-12-29T17:41:38.422Z"
+    },
+    {
+      "verdict": "UNVERIFIABLE",
+      "explanation": "The claim about the user 'AudibleNod' being a 'Top 1% Poster' on Reddit is not verifiable with the available information. While it is presented in the context of a Reddit post, there are no reliable sources to confirm or disprove a user's ranking or status on the platform.",
+      "confidence": 50,
+      "reasoning": "The claim is based exclusively on a user's assertion on Reddit without external validation from reliable sources. Since Reddit does not publicly share user rankings outside of its own platform, this claim cannot be confirmed or denied. The search results returned do not pertain to the user's status on Reddit, indicating a lack of additional verification sources.",
+      "sourceAnalysis": [
+        {
+          "sourceName": "reddit.com",
+          "supports": true,
+          "relevance": "The claim originates from a Reddit post where 'AudibleNod' identifies themselves as a 'Top 1% Poster'. However, the self-reported nature of this claim limits its reliability."
+        },
+        {
+          "sourceName": "audible.com",
+          "supports": false,
+          "relevance": "Sources from Audible pertain to audio content and do not relate to the user's Reddit status, providing no relevant information."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Top News Podcasts",
+          "url": "https://www.audible.com/charts/news-podcasts/23593544011",
+          "description": "Looking for the Top News Podcasts of 2025? Find your next great listen from these lists of listener favorites, updated daily!",
+          "siteName": "audible.com"
+        },
+        {
+          "title": "Audible - Audiobooks from Amazon",
+          "url": "https://www.reddit.com/r/audible/",
+          "description": "r/audible: This subreddit is for fans of Audible, the online audiobook service. We welcome any discussions of Audible including discussion of audiobooks and sales.",
+          "siteName": "reddit.com"
+        },
+        {
+          "title": "News: Press Releases | About Audible",
+          "url": "https://www.audible.com/about/newsroom/category/press-releases",
+          "description": "The latest news from Audible, including launches and audiobook releases, technology implementations, community impact and peeks inside Audible.",
+          "siteName": "audible.com"
+        }
+      ],
+      "claim": "Go to news\nr/news\n•\n21d ago\nAudibleNod\n Top 1% Poster",
+      "id": 1767030078800,
+      "timestamp": "2025-12-29T17:41:18.800Z"
+    },
+    {
+      "verdict": "TRUE",
       "explanation": "Multiple reliable sources confirm that Nick Shirley stated the alleged fraud in Minnesota was 'so obvious' that a 'kindergartner could figure out that there is fraud going on' during his appearance on Fox News' 'The Big Weekend Show.' This has been reported by Fox News, WFIN, and Yahoo News.",
       "confidence": 95,
       "reasoning": "The claim is directly supported by multiple credible sources, including Fox News, which is the original source of the quote. Both WFIN and Yahoo News reiterated the statement accurately, confirming the authenticity of what was said during the show.",
